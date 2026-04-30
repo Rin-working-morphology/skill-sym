@@ -5,6 +5,7 @@ import {
   confirm as confirmDialog,
   open as openDialog,
 } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 import type {
   AppState,
@@ -27,6 +28,23 @@ import type {
 import { publishModeLabel, toolMetaForTarget } from "../utils/managerUi";
 
 const THEME_MODE_STORAGE_KEY = "skillsym-theme-mode";
+const RELEASES_PAGE_URL =
+  "https://github.com/Rin-working-morphology/skill-sym/releases";
+const LATEST_RELEASE_API_URL =
+  "https://api.github.com/repos/Rin-working-morphology/skill-sym/releases/latest";
+
+interface GitHubReleaseAsset {
+  name: string;
+  browser_download_url: string;
+}
+
+interface GitHubRelease {
+  name: string | null;
+  tag_name: string;
+  html_url: string;
+  published_at: string | null;
+  assets: GitHubReleaseAsset[];
+}
 
 function readStoredThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -49,6 +67,52 @@ function applyThemeMode(mode: ThemeMode) {
 
   document.documentElement.dataset.theme = mode;
   document.documentElement.style.colorScheme = mode;
+}
+
+function normalizeVersion(version: string) {
+  return version.trim().replace(/^[^\d]*/, "").split(/[+-]/)[0];
+}
+
+function compareVersions(left: string, right: string) {
+  const leftParts = normalizeVersion(left).split(".").map(Number);
+  const rightParts = normalizeVersion(right).split(".").map(Number);
+  const length = Math.max(leftParts.length, rightParts.length);
+
+  for (let index = 0; index < length; index += 1) {
+    const leftPart = Number.isFinite(leftParts[index]) ? leftParts[index] : 0;
+    const rightPart = Number.isFinite(rightParts[index]) ? rightParts[index] : 0;
+
+    if (leftPart !== rightPart) {
+      return leftPart > rightPart ? 1 : -1;
+    }
+  }
+
+  return 0;
+}
+
+function selectInstallerAsset(assets: GitHubReleaseAsset[]) {
+  return (
+    assets.find((asset) => /_x64_zh-CN\.msi$/i.test(asset.name)) ??
+    assets.find((asset) => /\.msi$/i.test(asset.name)) ??
+    assets.find((asset) => /setup.*\.exe$/i.test(asset.name)) ??
+    null
+  );
+}
+
+function formatReleaseDate(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 export function useSkillManager() {
@@ -124,8 +188,8 @@ export function useSkillManager() {
   );
 
   async function initialize() {
-    await Promise.all([loadState(), loadAppMeta(), refreshUpdateStatus()]);
-    await refreshScopeData();
+    await Promise.all([loadState(), loadAppMeta()]);
+    await Promise.all([refreshScopeData(), refreshUpdateStatus()]);
   }
 
   async function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
@@ -223,7 +287,94 @@ export function useSkillManager() {
   }
 
   async function refreshUpdateStatus() {
-    updateStatus.value = await command<UpdateStatus>("check_for_updates");
+    const currentVersion =
+      appVersion.value ||
+      (await getVersion().catch(() => "")) ||
+      "";
+
+    updateStatus.value = {
+      status: "checking",
+      endpoint: LATEST_RELEASE_API_URL,
+      currentVersion,
+      message: "正在检查 GitHub 最新发布版本...",
+      integrationNote: "通过 GitHub Releases latest 接口检查版本。",
+    };
+
+    try {
+      const response = await fetch(LATEST_RELEASE_API_URL, {
+        headers: {
+          Accept: "application/vnd.github+json",
+        },
+      });
+
+      if (response.status === 404) {
+        updateStatus.value = {
+          status: "noRelease",
+          endpoint: LATEST_RELEASE_API_URL,
+          currentVersion,
+          releaseUrl: RELEASES_PAGE_URL,
+          message: "GitHub 上还没有可用发布版本。",
+          integrationNote: "创建 release 后这里会自动读取最新 tag 和安装包。",
+        };
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`GitHub 返回 ${response.status}`);
+      }
+
+      const release = (await response.json()) as GitHubRelease;
+      const latestVersion = normalizeVersion(release.tag_name);
+      const installerAsset = selectInstallerAsset(release.assets ?? []);
+      const hasNewVersion =
+        currentVersion && latestVersion
+          ? compareVersions(latestVersion, currentVersion) > 0
+          : false;
+
+      updateStatus.value = {
+        status: hasNewVersion ? "available" : "current",
+        endpoint: LATEST_RELEASE_API_URL,
+        currentVersion,
+        latestVersion,
+        releaseName: release.name,
+        releaseUrl: release.html_url,
+        downloadUrl: installerAsset?.browser_download_url ?? null,
+        assetName: installerAsset?.name ?? null,
+        publishedAt: formatReleaseDate(release.published_at),
+        message: hasNewVersion
+          ? `发现新版本 ${latestVersion}，当前版本 ${currentVersion || "-"}。`
+          : `当前已是最新版本 ${currentVersion || latestVersion || "-"}。`,
+        integrationNote: installerAsset
+          ? `已匹配安装包：${installerAsset.name}`
+          : "该 release 没有找到安装包资产，可打开发布页查看。",
+      };
+    } catch (error) {
+      updateStatus.value = {
+        status: "failed",
+        endpoint: LATEST_RELEASE_API_URL,
+        currentVersion,
+        releaseUrl: RELEASES_PAGE_URL,
+        message: "检查更新失败。",
+        integrationNote: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  async function openReleasePage() {
+    await runAction(async () => {
+      await openUrl(updateStatus.value?.releaseUrl ?? RELEASES_PAGE_URL);
+    });
+  }
+
+  async function openLatestDownload() {
+    const url = updateStatus.value?.downloadUrl ?? updateStatus.value?.releaseUrl;
+    if (!url) {
+      return;
+    }
+
+    await runAction(async () => {
+      await openUrl(url);
+    });
   }
 
   async function pickDirectory(): Promise<string | null> {
@@ -541,5 +692,7 @@ export function useSkillManager() {
     refreshPublishTargets,
     refreshScopeData,
     refreshUpdateStatus,
+    openReleasePage,
+    openLatestDownload,
   };
 }

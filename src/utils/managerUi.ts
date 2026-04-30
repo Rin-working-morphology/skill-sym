@@ -29,6 +29,11 @@ export function updateStatusLabel(status?: string) {
   const labels: Record<string, string> = {
     notConfigured: "未配置",
     ready: "已就绪",
+    checking: "检查中",
+    available: "发现新版",
+    current: "已是最新",
+    noRelease: "暂无发布",
+    failed: "检查失败",
   };
 
   return labels[status] ?? "未知状态";

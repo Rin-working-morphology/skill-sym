@@ -54,6 +54,7 @@
       :target-options="allTargetOptions"
       :app-name="appName"
       :app-version="appVersion"
+      :update-status="updateStatus"
       @back="setViewMode('manager')"
       @set-quick-base="setQuickBaseForScope({ kind: 'global' }, $event)"
       @choose-global-base-folder="chooseScopeBaseFolder({ kind: 'global' })"
@@ -61,6 +62,8 @@
       @set-theme-mode="setThemeMode"
       @toggle-publish-target="togglePublishTarget"
       @refresh-update-status="refreshUpdateStatus"
+      @open-release-page="openReleasePage"
+      @open-latest-download="openLatestDownload"
     />
 
     <AppNotice
@@ -85,6 +88,7 @@ const {
   scan,
   appName,
   appVersion,
+  updateStatus,
   viewMode,
   selectedScopeKey,
   themeMode,
@@ -117,6 +121,8 @@ const {
   deleteSkill,
   refreshScopeData,
   refreshUpdateStatus,
+  openReleasePage,
+  openLatestDownload,
 } = useSkillManager();
 
 onMounted(async () => {

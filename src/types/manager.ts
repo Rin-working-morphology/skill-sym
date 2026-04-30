@@ -67,10 +67,23 @@ export interface DeleteSkillRequest {
 }
 
 export interface UpdateStatus {
-  status: "notConfigured" | "ready" | string;
+  status:
+    | "checking"
+    | "available"
+    | "current"
+    | "noRelease"
+    | "failed"
+    | string;
   endpoint?: string | null;
   message: string;
   integrationNote: string;
+  currentVersion?: string | null;
+  latestVersion?: string | null;
+  releaseName?: string | null;
+  releaseUrl?: string | null;
+  downloadUrl?: string | null;
+  assetName?: string | null;
+  publishedAt?: string | null;
 }
 
 export interface ScopeOption {

@@ -197,21 +197,30 @@
             </dl>
 
             <div class="settings-actions">
-              <button type="button" :disabled="busy">更新日志</button>
+              <button
+                type="button"
+                :disabled="busy"
+                @click="emit('openReleasePage')"
+              >
+                更新日志
+              </button>
+              <button
+                v-if="updateStatus?.downloadUrl"
+                type="button"
+                :disabled="busy"
+                @click="emit('openLatestDownload')"
+              >
+                下载安装包
+              </button>
               <button
                 type="button"
                 class="primary-action"
-                :disabled="busy"
+                :disabled="busy || updateStatus?.status === 'checking'"
                 @click="emit('refreshUpdateStatus')"
               >
                 检查更新
               </button>
             </div>
-
-            <!--
-              更新检查尚未配置发布端点。
-              后续可恢复展示更新状态、更新端点与集成说明。
-            -->
           </article>
         </section>
       </Transition>
@@ -220,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import type {
   AppState,
@@ -229,11 +238,13 @@ import type {
   TargetId,
   TargetOption,
   ThemeMode,
+  UpdateStatus,
 } from "../types/manager";
+import { updateStatusLabel } from "../utils/managerUi";
 
 type SettingsTab = "general" | "targets" | "about";
 
-defineProps<{
+const props = defineProps<{
   busy: boolean;
   state: AppState | null;
   publishMode: PublishMode;
@@ -241,6 +252,7 @@ defineProps<{
   targetOptions: TargetOption[];
   appName: string;
   appVersion: string;
+  updateStatus: UpdateStatus | null;
 }>();
 
 const emit = defineEmits<{
@@ -251,6 +263,8 @@ const emit = defineEmits<{
   setThemeMode: [mode: ThemeMode];
   togglePublishTarget: [targetId: TargetId];
   refreshUpdateStatus: [];
+  openReleasePage: [];
+  openLatestDownload: [];
 }>();
 
 const tabs: { id: SettingsTab; label: string }[] = [
@@ -587,6 +601,75 @@ const activeTab = ref<SettingsTab>("general");
 .meta-grid dd {
   margin-top: 4px;
   overflow-wrap: anywhere;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: var(--type-button-compact);
+  font-weight: var(--font-label);
+}
+
+.status-available {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.status-current {
+  background: var(--control-bg-active);
+  color: var(--text);
+}
+
+.status-failed,
+.status-norelease {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+}
+
+.update-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 6px;
+  background: var(--surface-muted);
+}
+
+.update-summary p {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.update-summary small {
+  overflow-wrap: anywhere;
+}
+
+.update-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 2px 0 0;
+}
+
+.update-detail-grid div {
+  min-width: 0;
+}
+
+.update-detail-grid dt {
+  font-size: 0.72rem;
+  font-weight: var(--font-label);
+  color: var(--text-muted);
+}
+
+.update-detail-grid dd {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
 }
 
 .primary-action {
