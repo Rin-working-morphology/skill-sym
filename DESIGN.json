@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-30T16:42:34.7715705+08:00",
+  "title": "Design System: SkillSym",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Porcelain Worktop",
+        "canonical": "oklch(0.991 0.0015 248)",
+        "tonalRamp": [
+          "oklch(0.15 0.0015 248)",
+          "oklch(0.27 0.0015 248)",
+          "oklch(0.39 0.0015 248)",
+          "oklch(0.51 0.0015 248)",
+          "oklch(0.63 0.0015 248)",
+          "oklch(0.75 0.0015 248)",
+          "oklch(0.87 0.0015 248)",
+          "oklch(0.95 0.0015 248)"
+        ]
+      },
+      "rail-bg": {
+        "role": "neutral",
+        "displayName": "Rail Mist",
+        "canonical": "oklch(0.982 0.004 248)",
+        "tonalRamp": [
+          "oklch(0.15 0.004 248)",
+          "oklch(0.27 0.004 248)",
+          "oklch(0.39 0.004 248)",
+          "oklch(0.51 0.004 248)",
+          "oklch(0.63 0.004 248)",
+          "oklch(0.75 0.004 248)",
+          "oklch(0.87 0.004 248)",
+          "oklch(0.95 0.004 248)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Sheet Surface",
+        "canonical": "oklch(0.997 0.0015 248)",
+        "tonalRamp": [
+          "oklch(0.15 0.0015 248)",
+          "oklch(0.27 0.0015 248)",
+          "oklch(0.39 0.0015 248)",
+          "oklch(0.51 0.0015 248)",
+          "oklch(0.63 0.0015 248)",
+          "oklch(0.75 0.0015 248)",
+          "oklch(0.87 0.0015 248)",
+          "oklch(0.95 0.0015 248)"
+        ]
+      },
+      "surface-muted": {
+        "role": "neutral",
+        "displayName": "Quiet Fill",
+        "canonical": "oklch(0.966 0.006 250)",
+        "tonalRamp": [
+          "oklch(0.15 0.006 250)",
+          "oklch(0.27 0.006 250)",
+          "oklch(0.39 0.006 250)",
+          "oklch(0.51 0.006 250)",
+          "oklch(0.63 0.006 250)",
+          "oklch(0.75 0.006 250)",
+          "oklch(0.87 0.006 250)",
+          "oklch(0.95 0.006 250)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Brass Pin",
+        "canonical": "oklch(0.753 0.162 66.6)",
+        "tonalRamp": [
+          "oklch(0.15 0.08 66.6)",
+          "oklch(0.27 0.11 66.6)",
+          "oklch(0.39 0.14 66.6)",
+          "oklch(0.51 0.162 66.6)",
+          "oklch(0.63 0.162 66.6)",
+          "oklch(0.75 0.162 66.6)",
+          "oklch(0.87 0.09 66.6)",
+          "oklch(0.95 0.035 66.6)"
+        ]
+      },
+      "danger-text": {
+        "role": "secondary",
+        "displayName": "Delete Red",
+        "canonical": "oklch(0.58 0.16 24)",
+        "tonalRamp": [
+          "oklch(0.15 0.08 24)",
+          "oklch(0.27 0.11 24)",
+          "oklch(0.39 0.14 24)",
+          "oklch(0.51 0.16 24)",
+          "oklch(0.63 0.14 24)",
+          "oklch(0.75 0.1 24)",
+          "oklch(0.87 0.06 24)",
+          "oklch(0.95 0.035 24)"
+        ]
+      },
+      "ok-text": {
+        "role": "secondary",
+        "displayName": "Success Leaf",
+        "canonical": "oklch(0.52 0.14 137)",
+        "tonalRamp": [
+          "oklch(0.15 0.07 137)",
+          "oklch(0.27 0.1 137)",
+          "oklch(0.39 0.13 137)",
+          "oklch(0.51 0.14 137)",
+          "oklch(0.63 0.12 137)",
+          "oklch(0.75 0.09 137)",
+          "oklch(0.87 0.055 137)",
+          "oklch(0.95 0.035 137)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Top-level app views and major settings screens."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Panel titles and section headers."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Skill names, paths, rows, controls, and operational copy."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Metadata, table headers, pills, and compact action labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay-lift",
+        "value": "0 8px 18px color-mix(in oklch, var(--shadow) 74%, transparent)",
+        "purpose": "Workspace menus and compact popovers."
+      },
+      {
+        "name": "notice-lift",
+        "value": "0 6px 16px color-mix(in oklch, var(--shadow) 72%, transparent)",
+        "purpose": "Transient status and error notices."
+      },
+      {
+        "name": "inset-separator",
+        "value": "inset 0 -1px color-mix(in oklch, var(--line) 68%, transparent)",
+        "purpose": "Sticky headers and surface boundaries."
+      }
+    ],
+    "motion": [
+      {
+        "name": "motion-fast",
+        "value": "140ms",
+        "purpose": "Press feedback and quick icon movement."
+      },
+      {
+        "name": "motion-base",
+        "value": "180ms",
+        "purpose": "Default hover, focus, color, and opacity transitions."
+      },
+      {
+        "name": "motion-slow",
+        "value": "240ms",
+        "purpose": "View settle, row movement, and status dot entrance."
+      },
+      {
+        "name": "ease-out-quart",
+        "value": "cubic-bezier(0.25, 1, 0.5, 1)",
+        "purpose": "Pressed and tactile state changes."
+      },
+      {
+        "name": "ease-out-quint",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Default UI transitions."
+      },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Settling views and newly active status markers."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile",
+        "value": "720px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The rare brass action used for explicit final commands.",
+      "html": "<button class=\"ds-btn-primary\">检查更新</button>",
+      "css": ".ds-btn-primary { min-height: 24px; padding: 3px 8px; border: 1px solid transparent; border-radius: 5px; background: var(--accent); color: var(--accent-text); font-family: Geist, Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 0.82rem; font-weight: 400; line-height: 1.25; transition: background-color var(--motion-base) var(--ease-out-quint), transform var(--motion-fast) var(--ease-out-quart); } .ds-btn-primary:hover { background: var(--accent-hover); } .ds-btn-primary:active { transform: translateY(1px); } .ds-btn-primary:focus-visible { outline: 2px solid color-mix(in oklch, var(--accent) 46%, var(--surface)); outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "The default low-noise command button used across rails and panels.",
+      "html": "<button class=\"ds-btn-quiet\">选择目录</button>",
+      "css": ".ds-btn-quiet { min-height: 24px; padding: 3px 8px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--text); font-family: Geist, Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 0.82rem; font-weight: 400; line-height: 1.25; transition: background-color var(--motion-base) var(--ease-out-quint), color var(--motion-base) var(--ease-out-quint), transform var(--motion-fast) var(--ease-out-quart); } .ds-btn-quiet:hover { background: var(--control-bg-hover); } .ds-btn-quiet:active { transform: translateY(1px); } .ds-btn-quiet:focus-visible { outline: 2px solid color-mix(in oklch, var(--accent) 46%, var(--surface)); outline-offset: 2px; }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented-control",
+      "description": "Compact two-option selector for publish mode and theme choices.",
+      "html": "<div class=\"ds-segment\"><button class=\"ds-segment-active\">链接</button><button>复制</button></div>",
+      "css": ".ds-segment { display: inline-flex; align-items: center; gap: 3px; padding: 2px; border-radius: 5px; background: var(--surface-muted); } .ds-segment button { min-height: 22px; padding: 2px 7px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--text-muted); font-family: Geist, Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 0.76rem; line-height: 1.25; transition: background-color var(--motion-base) var(--ease-out-quint), color var(--motion-base) var(--ease-out-quint), transform var(--motion-fast) var(--ease-out-quart); } .ds-segment button:hover { background: var(--control-bg-hover); color: var(--text); } .ds-segment button:focus-visible { outline: 2px solid color-mix(in oklch, var(--accent) 46%, var(--surface)); outline-offset: 2px; } .ds-segment-active { border-color: var(--selection-stroke) !important; background: var(--surface) !important; color: var(--text) !important; font-weight: 500; }"
+    },
+    {
+      "name": "Scope Card",
+      "kind": "nav",
+      "refersTo": "nav-scope-active",
+      "description": "Left-rail scope selector with a small brass selected marker.",
+      "html": "<button class=\"ds-scope-card ds-scope-active\"><span class=\"ds-scope-dot\"></span><strong>全局技能</strong><small>C:/Users/rin/.codex</small></button>",
+      "css": ".ds-scope-card { position: relative; width: 260px; min-height: 40px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 2px; padding: 5px 6px 5px 28px; overflow: hidden; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--text); text-align: left; font-family: Geist, Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; transition: background-color var(--motion-base) var(--ease-out-quint), transform var(--motion-fast) var(--ease-out-quart); } .ds-scope-card:hover { background: color-mix(in oklch, var(--surface) 62%, transparent); } .ds-scope-card:focus-visible { outline: 2px solid color-mix(in oklch, var(--accent-point) 70%, transparent); outline-offset: 2px; } .ds-scope-card strong { font-size: 0.82rem; font-weight: 500; } .ds-scope-card small { color: var(--text-muted); font-size: 0.76rem; overflow-wrap: anywhere; } .ds-scope-dot { position: absolute; left: 11px; top: 50%; width: 6px; height: 6px; border: 1px solid var(--line-strong); border-radius: 50%; background: var(--rail-bg); transform: translateY(-50%); } .ds-scope-active { background: var(--surface-active); } .ds-scope-active .ds-scope-dot { border-color: var(--accent-point); background: var(--accent-point); box-shadow: 0 0 0 3px color-mix(in oklch, var(--accent-point) 12%, transparent); }"
+    },
+    {
+      "name": "Skill Row",
+      "kind": "custom",
+      "refersTo": "skill-row",
+      "description": "Dense row pattern for skill entries and publish target actions.",
+      "html": "<div class=\"ds-skill-row\"><span class=\"ds-skill-name\">impeccable</span><span class=\"ds-pill\">文件夹</span><button class=\"ds-tool active\">CX</button><button class=\"ds-tool\">CL</button></div>",
+      "css": ".ds-skill-row { min-height: 38px; display: grid; grid-template-columns: minmax(130px, 1fr) 62px minmax(64px, auto); gap: 7px; align-items: center; padding: 4px 8px 4px 12px; border-bottom: 1px solid color-mix(in oklch, var(--line) 76%, transparent); background: var(--surface); color: var(--text); font-family: Geist, Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; transition: background-color var(--motion-base) var(--ease-out-quint), border-color var(--motion-base) var(--ease-out-quint); } .ds-skill-row:hover { background: color-mix(in oklch, var(--surface-muted) 62%, transparent); } .ds-skill-name { min-width: 0; font-size: 0.9rem; overflow-wrap: anywhere; } .ds-pill { width: fit-content; padding: 2px 5px; border-radius: 999px; background: var(--surface-muted); color: var(--text-muted); font-size: 0.76rem; font-weight: 500; } .ds-tool { position: relative; width: 26px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: var(--text-muted); font-size: 0.76rem; font-weight: 500; transition: background-color var(--motion-base) var(--ease-out-quint), color var(--motion-base) var(--ease-out-quint), transform var(--motion-fast) var(--ease-out-quart); } .ds-tool:hover, .ds-tool.active { background: var(--control-bg-active); color: var(--text); } .ds-tool.active::after { content: ''; position: absolute; right: 3px; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--accent-point); box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent-point) 18%, transparent); }"
+    },
+    {
+      "name": "Notice",
+      "kind": "custom",
+      "refersTo": "notification",
+      "description": "Transient top-right status notice with semantic dot.",
+      "html": "<div class=\"ds-notice ds-notice-success\"><span class=\"ds-notice-dot\"></span><span>已刷新技能列表</span><button>×</button></div>",
+      "css": ".ds-notice { max-width: 320px; min-height: 28px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); box-shadow: 0 6px 16px color-mix(in oklch, var(--shadow) 72%, transparent); color: var(--text); font-family: Geist, Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif; font-size: 0.82rem; line-height: 1.42; overflow-wrap: anywhere; } .ds-notice-dot { width: 6px; height: 6px; flex: 0 0 auto; border-radius: 50%; background: var(--text-muted); transition: transform var(--motion-fast) var(--ease-out-quart); } .ds-notice:hover .ds-notice-dot { transform: scale(1.18); } .ds-notice button { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 4px; background: transparent; color: color-mix(in oklch, currentColor 64%, transparent); font: inherit; line-height: 1; } .ds-notice button:hover { background: color-mix(in oklch, currentColor 8%, transparent); color: currentColor; } .ds-notice-success { border-color: color-mix(in oklch, var(--ok-text) 22%, var(--line)); background: color-mix(in oklch, var(--ok-bg) 58%, var(--surface)); } .ds-notice-success .ds-notice-dot { background: var(--ok-text); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Command Desk",
+    "overview": "SkillSym should feel like a precise desktop workbench: quiet enough to disappear, structured enough to make file state obvious, and restrained enough that users trust each action before they publish or remove anything. The system is a dense product UI, not a landing page, so clarity comes from columns, fine separators, subtle active states, and predictable controls.\n\nThe visual language is light by default because users are managing local folders in a daytime desktop workflow, often comparing paths and skill names in a normal IDE-adjacent environment. Dark mode exists for low-light use, but it keeps the same subdued hierarchy instead of becoming a separate dramatic theme.\n\nThe system explicitly rejects dirty greens, decorative gradients, visible texture, heavy shadows, crowded cards, and attention-seeking motion. Any new screen must preserve the current operating-room calm: text and file locations first, controls second, decoration last.",
+    "keyCharacteristics": [
+      "Dense but readable desktop layout with a fixed rail and task-first content pane.",
+      "Restrained OKLCH palette: tinted neutrals plus a rare brass accent.",
+      "Low elevation by default, with shadows reserved for transient overlays and notices.",
+      "System-sans typography tuned for Chinese and English labels at compact sizes.",
+      "Motion communicates state changes only, using 140-240ms ease-out curves."
+    ],
+    "rules": [
+      {
+        "name": "The Rare Brass Rule",
+        "body": "Brass is a state signal, not a brand wash. Keep it under 10% of any screen and never use it as background decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Porcelain Neutral Rule",
+        "body": "Backgrounds are always lightly tinted neutrals. Pure black and pure white are forbidden.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Display Type Rule",
+        "body": "Labels, buttons, file paths, and data never use display fonts or decorative letter spacing.",
+        "section": "typography"
+      },
+      {
+        "name": "The Weight-Only Emphasis Rule",
+        "body": "Emphasis is created with weight, color, and placement. Do not add oversized text inside compact panels.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-Until-Floating Rule",
+        "body": "Static panels, rows, cards, tabs, and buttons do not cast shadows. Only overlays and notices may lift.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep primary content first: skill names, scope paths, source location, publish mode, and target state must be faster to scan than surrounding controls.",
+      "Do use OKLCH tokens and color-mix() for hover, focus, and status blends.",
+      "Do keep controls compact: 5px radius, 20-30px height, and fixed icon button dimensions.",
+      "Do use fine separators, tonal panels, sticky headers, and scroll fades to define structure.",
+      "Do keep motion between 140ms and 240ms, using ease-out quart, quint, or expo curves.",
+      "Do preserve both light and dark theme token parity when adding new surfaces."
+    ],
+    "donts": [
+      "Don't use dirty greens, decorative gradients, visible texture, heavy shadows, crowded cards, or attention-seeking motion.",
+      "Don't use pure black, pure white, glassmorphism, gradient text, or decorative color washes.",
+      "Don't use border-left or border-right greater than 1px as a colored stripe on cards, rows, callouts, or alerts.",
+      "Don't add nested cards. Use full-width bands, separators, or table-like rows instead.",
+      "Don't make inactive states saturated. Accent color belongs to action, focus, selection, and status.",
+      "Don't animate layout properties or create page-load choreography. Product UI loads into the task."
+    ]
+  }
+}
