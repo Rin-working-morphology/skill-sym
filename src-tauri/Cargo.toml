@@ -1,6 +1,6 @@
 [package]
 name = "skillsym"
-version = "0.1.3"
+version = "0.1.4"
 description = "skill链接器"
 authors = ["rin"]
 edition = "2021"
