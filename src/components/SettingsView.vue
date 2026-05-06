@@ -76,6 +76,20 @@
               <button
                 type="button"
                 :disabled="busy"
+                @click="emit('setQuickBase', '.trae')"
+              >
+                .trae
+              </button>
+              <button
+                type="button"
+                :disabled="busy"
+                @click="emit('setQuickBase', '.codebuddy')"
+              >
+                .codebuddy
+              </button>
+              <button
+                type="button"
+                :disabled="busy"
                 @click="emit('chooseGlobalBaseFolder')"
               >
                 选择目录

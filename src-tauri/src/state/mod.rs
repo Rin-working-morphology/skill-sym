@@ -43,7 +43,19 @@ pub(crate) const SUPPORTED_TARGETS: &[SupportedTarget] = &[
         name: "Qoder",
         folder_name: ".qoder",
     },
+    SupportedTarget {
+        id: "trae",
+        name: "Trae",
+        folder_name: ".trae",
+    },
+    SupportedTarget {
+        id: "codebuddy",
+        name: "CodeBuddy",
+        folder_name: ".codebuddy",
+    },
 ];
+
+const DEFAULT_ENABLED_TARGET_IDS: &[&str] = &["claude", "codex", "gemini", "qoder"];
 
 pub(crate) fn load_and_prepare_state(app: &AppHandle) -> CommandResult<AppState> {
     let mut state = load_state(app)?;
@@ -79,9 +91,9 @@ pub(crate) fn default_publish_mode() -> PublishMode {
 }
 
 pub(crate) fn default_enabled_target_ids() -> Vec<String> {
-    SUPPORTED_TARGETS
+    DEFAULT_ENABLED_TARGET_IDS
         .iter()
-        .map(|target| target.id.to_string())
+        .map(|target| target.to_string())
         .collect()
 }
 
@@ -284,6 +296,18 @@ mod tests {
 
         assert_eq!(state.default_publish_mode, PublishMode::Symlink);
         assert_eq!(state.enabled_target_ids, default_enabled_target_ids());
+    }
+
+    #[test]
+    fn new_targets_are_available_but_not_enabled_by_default() {
+        let defaults = default_enabled_target_ids();
+
+        assert!(defaults.contains(&"claude".to_string()));
+        assert!(defaults.contains(&"codex".to_string()));
+        assert!(defaults.contains(&"gemini".to_string()));
+        assert!(defaults.contains(&"qoder".to_string()));
+        assert!(!defaults.contains(&"trae".to_string()));
+        assert!(!defaults.contains(&"codebuddy".to_string()));
     }
 
     #[test]

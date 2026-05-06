@@ -1,6 +1,6 @@
 # SkillSym
 
-一个用于管理和发布 AI Coding Skills 的本地桌面工具。SkillSym 可以扫描全局目录或项目工作区内的 `skills` 内容，并将它们发布到 Claude、Codex、Gemini、Qoder 等工具约定的本地目录中。
+一个用于管理和发布 AI Coding Skills 的本地桌面工具。SkillSym 可以扫描全局目录或项目工作区内的 `skills` 内容，并将它们发布到 Claude、Codex、Gemini、Qoder、Trae、CodeBuddy 等工具约定的本地目录中。
 
 项目基于 **Tauri 2 + Vue 3 + TypeScript** 构建，前端负责管理界面，Rust 后端负责文件系统扫描、复制、符号链接、清理和本地状态持久化。
 
@@ -13,7 +13,7 @@
 - 支持两种发布方式：
   - **相对链接**：创建相对符号链接，适合本机复用和保持源内容同步
   - **物理复制**：复制文件或文件夹，适合需要独立副本的场景
-- 支持启用或关闭发布目标：Claude、Codex、Gemini、Qoder
+- 支持启用或关闭发布目标：Claude、Codex、Gemini、Qoder、Trae、CodeBuddy
 - 删除源技能时同步清理已发布到目标目录中的同名技能
 - 支持浅色/深色主题
 - 提供工作区快捷打开、工作区移除、基础目录切换等桌面操作
@@ -37,12 +37,14 @@ D:\ProjectA\.codex\skills
 
 默认支持的目标工具目录如下：
 
-| 工具   | 基础目录名 | 技能目录         |
-| ------ | ---------- | ---------------- |
-| Claude | `.claude`  | `.claude/skills` |
-| Codex  | `.codex`   | `.codex/skills`  |
-| Gemini | `.gemini`  | `.gemini/skills` |
-| Qoder  | `.qoder`   | `.qoder/skills`  |
+| 工具      | 基础目录名   | 技能目录              |
+| --------- | ------------ | --------------------- |
+| Claude    | `.claude`    | `.claude/skills`      |
+| Codex     | `.codex`     | `.codex/skills`       |
+| Gemini    | `.gemini`    | `.gemini/skills`      |
+| Qoder     | `.qoder`     | `.qoder/skills`       |
+| Trae      | `.trae`      | `.trae/skills`        |
+| CodeBuddy | `.codebuddy` | `.codebuddy/skills`   |
 
 全局范围下，目标目录位于用户主目录下。工作区范围下，目标目录位于对应工作区根目录下。
 
@@ -90,7 +92,7 @@ D:\ProjectA\.codex\skills
 <workspace>/.claude/skills
 ```
 
-作为该工作区的技能来源。你也可以通过工作区旁的编辑按钮，改成 `.codex`、`.qoder` 或任意已有目录。
+作为该工作区的技能来源。你也可以通过工作区旁的编辑按钮，改成 `.codex`、`.qoder`、`.trae`、`.codebuddy` 或任意已有目录。
 
 ### 发布技能
 
@@ -98,7 +100,7 @@ D:\ProjectA\.codex\skills
 
 - `skills` 根目录行用于发布或移除整个 `skills` 文件夹
 - 单个技能行用于发布或移除对应技能
-- Claude、Codex、Gemini、Qoder 图标表示目标工具
+- Claude、Codex、Gemini、Qoder、Trae、CodeBuddy 图标表示目标工具
 - 图标上出现状态点表示该技能或目录已经发布到对应目标
 
 发布前可以在顶部切换发布方式：
@@ -113,7 +115,7 @@ D:\ProjectA\.codex\skills
 设置页包含三类配置：
 
 - **通用**：配置全局根目录、默认发布方式、界面主题
-- **发布目标**：启用或停用 Claude、Codex、Gemini、Qoder
+- **发布目标**：启用或停用 Claude、Codex、Gemini、Qoder、Trae、CodeBuddy
 - **关于**：查看应用名称、版本、更新状态和一键更新入口
 
 更新流程使用 Tauri 2 updater，从 GitHub Releases 的 `latest.json` 检查签名更新包，并在应用内完成下载、安装和重启。

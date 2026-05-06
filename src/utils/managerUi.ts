@@ -90,4 +90,14 @@ const targetMeta: Record<
     iconSrc: "/qoder.svg",
     tone: "qoder",
   },
+  trae: {
+    shortLabel: "TR",
+    iconSrc: "/trae.svg",
+    tone: "trae",
+  },
+  codebuddy: {
+    shortLabel: "CB",
+    iconSrc: "/codebuddy.svg",
+    tone: "codebuddy",
+  },
 };

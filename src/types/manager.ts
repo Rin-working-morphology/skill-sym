@@ -2,9 +2,27 @@ export type ScopeKind = "global" | "workspace";
 export type PublishMode = "symlink" | "copy";
 export type ViewMode = "manager" | "settings";
 export type ThemeMode = "light" | "dark";
-export type TargetId = "claude" | "codex" | "qoder" | "gemini";
-export type BaseFolderPreset = ".claude" | ".codex" | ".qoder";
-export type ToolTone = "claude" | "codex" | "qoder" | "gemini" | "generic";
+export type TargetId =
+  | "claude"
+  | "codex"
+  | "qoder"
+  | "gemini"
+  | "trae"
+  | "codebuddy";
+export type BaseFolderPreset =
+  | ".claude"
+  | ".codex"
+  | ".qoder"
+  | ".trae"
+  | ".codebuddy";
+export type ToolTone =
+  | "claude"
+  | "codex"
+  | "qoder"
+  | "gemini"
+  | "trae"
+  | "codebuddy"
+  | "generic";
 
 export interface Workspace {
   id: string;
