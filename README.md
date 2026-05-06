@@ -114,9 +114,9 @@ D:\ProjectA\.codex\skills
 
 - **通用**：配置全局根目录、默认发布方式、界面主题
 - **发布目标**：启用或停用 Claude、Codex、Gemini、Qoder
-- **关于**：查看应用名称、版本和更新检查入口
+- **关于**：查看应用名称、版本、更新状态和一键更新入口
 
-当前更新检查入口保留了后续集成位置，但尚未配置实际发布端点。
+更新流程使用 Tauri 2 updater，从 GitHub Releases 的 `latest.json` 检查签名更新包，并在应用内完成下载、安装和重启。
 
 ## 本地状态
 
@@ -146,6 +146,8 @@ skillsym-state.json
 - Tauri 插件：
   - `@tauri-apps/plugin-dialog`
   - `@tauri-apps/plugin-opener`
+  - `@tauri-apps/plugin-process`
+  - `@tauri-apps/plugin-updater`
 
 ## 项目结构
 
@@ -167,7 +169,6 @@ skillsym-state.json
 │     ├─ filesystem/       # 扫描、发布、复制、链接、删除逻辑
 │     ├─ models/           # Rust 数据结构
 │     ├─ state/            # 状态读取、迁移和保存
-│     ├─ update/           # 更新检查占位逻辑
 │     └─ paths.rs          # 路径校验和工具函数
 ├─ DESIGN.md               # 设计系统说明
 ├─ PRODUCT.md              # 产品和视觉方向
@@ -224,6 +225,8 @@ bun run tauri build
 ```
 
 Tauri 桌面包通常应在目标系统上构建：Windows 构建 Windows 安装包，macOS 构建 `.app` / `.dmg`，Linux 构建 `.AppImage` / `.deb` / `.rpm` 等。只有 Windows 电脑时，建议使用 GitHub Actions 的 Windows、macOS、Ubuntu runner 自动构建三端产物。
+
+自动更新包由 `createUpdaterArtifacts` 生成并签名。发布前需要在 GitHub 仓库中配置 `TAURI_SIGNING_PRIVATE_KEY`；如果后续更换 key，需要同步更新 `src-tauri/tauri.conf.json` 中的 updater 公钥。
 
 Linux 本地构建前需要安装 WebKitGTK 等系统依赖。Ubuntu 示例：
 

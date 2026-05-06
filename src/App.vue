@@ -61,9 +61,8 @@
       @set-publish-mode="setDefaultPublishMode"
       @set-theme-mode="setThemeMode"
       @toggle-publish-target="togglePublishTarget"
-      @refresh-update-status="refreshUpdateStatus"
+      @install-latest-update="installLatestUpdate"
       @open-release-page="openReleasePage"
-      @open-latest-download="openLatestDownload"
     />
 
     <AppNotice
@@ -120,9 +119,8 @@ const {
   toggleSkillTarget,
   deleteSkill,
   refreshScopeData,
-  refreshUpdateStatus,
+  installLatestUpdate,
   openReleasePage,
-  openLatestDownload,
 } = useSkillManager();
 
 onMounted(async () => {

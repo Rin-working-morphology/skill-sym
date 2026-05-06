@@ -6,6 +6,8 @@ import {
   open as openDialog,
 } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check, type DownloadEvent, type Update } from "@tauri-apps/plugin-updater";
 
 import type {
   AppState,
@@ -30,21 +32,8 @@ import { publishModeLabel, toolMetaForTarget } from "../utils/managerUi";
 const THEME_MODE_STORAGE_KEY = "skillsym-theme-mode";
 const RELEASES_PAGE_URL =
   "https://github.com/Rin-working-morphology/skill-sym/releases";
-const LATEST_RELEASE_API_URL =
-  "https://api.github.com/repos/Rin-working-morphology/skill-sym/releases/latest";
-
-interface GitHubReleaseAsset {
-  name: string;
-  browser_download_url: string;
-}
-
-interface GitHubRelease {
-  name: string | null;
-  tag_name: string;
-  html_url: string;
-  published_at: string | null;
-  assets: GitHubReleaseAsset[];
-}
+const UPDATE_ENDPOINT_URL =
+  "https://github.com/Rin-working-morphology/skill-sym/releases/latest/download/latest.json";
 
 function readStoredThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -69,36 +58,6 @@ function applyThemeMode(mode: ThemeMode) {
   document.documentElement.style.colorScheme = mode;
 }
 
-function normalizeVersion(version: string) {
-  return version.trim().replace(/^[^\d]*/, "").split(/[+-]/)[0];
-}
-
-function compareVersions(left: string, right: string) {
-  const leftParts = normalizeVersion(left).split(".").map(Number);
-  const rightParts = normalizeVersion(right).split(".").map(Number);
-  const length = Math.max(leftParts.length, rightParts.length);
-
-  for (let index = 0; index < length; index += 1) {
-    const leftPart = Number.isFinite(leftParts[index]) ? leftParts[index] : 0;
-    const rightPart = Number.isFinite(rightParts[index]) ? rightParts[index] : 0;
-
-    if (leftPart !== rightPart) {
-      return leftPart > rightPart ? 1 : -1;
-    }
-  }
-
-  return 0;
-}
-
-function selectInstallerAsset(assets: GitHubReleaseAsset[]) {
-  return (
-    assets.find((asset) => /_x64_zh-CN\.msi$/i.test(asset.name)) ??
-    assets.find((asset) => /\.msi$/i.test(asset.name)) ??
-    assets.find((asset) => /setup.*\.exe$/i.test(asset.name)) ??
-    null
-  );
-}
-
 function formatReleaseDate(value?: string | null) {
   if (!value) {
     return null;
@@ -113,6 +72,43 @@ function formatReleaseDate(value?: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   });
+}
+
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "0 B";
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
+function updateAvailableStatus(
+  update: Update,
+  currentVersion: string,
+  message?: string,
+): UpdateStatus {
+  return {
+    status: "available",
+    endpoint: UPDATE_ENDPOINT_URL,
+    currentVersion,
+    latestVersion: update.version,
+    releaseName: update.version,
+    releaseUrl: RELEASES_PAGE_URL,
+    publishedAt: formatReleaseDate(update.date),
+    message:
+      message ??
+      `发现新版本 ${update.version}，当前版本 ${currentVersion || update.currentVersion || "-"}。`,
+    integrationNote: update.body || "更新信息来自 Tauri updater manifest。",
+  };
 }
 
 export function useSkillManager() {
@@ -294,64 +290,30 @@ export function useSkillManager() {
 
     updateStatus.value = {
       status: "checking",
-      endpoint: LATEST_RELEASE_API_URL,
+      endpoint: UPDATE_ENDPOINT_URL,
       currentVersion,
-      message: "正在检查 GitHub 最新发布版本...",
-      integrationNote: "通过 GitHub Releases latest 接口检查版本。",
+      releaseUrl: RELEASES_PAGE_URL,
+      message: "正在检查可用更新...",
+      integrationNote: "通过 Tauri updater 检查签名更新元数据。",
     };
 
     try {
-      const response = await fetch(LATEST_RELEASE_API_URL, {
-        headers: {
-          Accept: "application/vnd.github+json",
-        },
-      });
+      const update = await check();
 
-      if (response.status === 404) {
-        updateStatus.value = {
-          status: "noRelease",
-          endpoint: LATEST_RELEASE_API_URL,
-          currentVersion,
-          releaseUrl: RELEASES_PAGE_URL,
-          message: "GitHub 上还没有可用发布版本。",
-          integrationNote: "创建 release 后这里会自动读取最新 tag 和安装包。",
-        };
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`GitHub 返回 ${response.status}`);
-      }
-
-      const release = (await response.json()) as GitHubRelease;
-      const latestVersion = normalizeVersion(release.tag_name);
-      const installerAsset = selectInstallerAsset(release.assets ?? []);
-      const hasNewVersion =
-        currentVersion && latestVersion
-          ? compareVersions(latestVersion, currentVersion) > 0
-          : false;
-
-      updateStatus.value = {
-        status: hasNewVersion ? "available" : "current",
-        endpoint: LATEST_RELEASE_API_URL,
-        currentVersion,
-        latestVersion,
-        releaseName: release.name,
-        releaseUrl: release.html_url,
-        downloadUrl: installerAsset?.browser_download_url ?? null,
-        assetName: installerAsset?.name ?? null,
-        publishedAt: formatReleaseDate(release.published_at),
-        message: hasNewVersion
-          ? `发现新版本 ${latestVersion}，当前版本 ${currentVersion || "-"}。`
-          : `当前已是最新版本 ${currentVersion || latestVersion || "-"}。`,
-        integrationNote: installerAsset
-          ? `已匹配安装包：${installerAsset.name}`
-          : "该 release 没有找到安装包资产，可打开发布页查看。",
-      };
+      updateStatus.value = update
+        ? updateAvailableStatus(update, currentVersion)
+        : {
+            status: "current",
+            endpoint: UPDATE_ENDPOINT_URL,
+            currentVersion,
+            releaseUrl: RELEASES_PAGE_URL,
+            message: `当前已是最新版本 ${currentVersion || "-"}。`,
+            integrationNote: "Tauri updater 未返回可安装的新版本。",
+          };
     } catch (error) {
       updateStatus.value = {
         status: "failed",
-        endpoint: LATEST_RELEASE_API_URL,
+        endpoint: UPDATE_ENDPOINT_URL,
         currentVersion,
         releaseUrl: RELEASES_PAGE_URL,
         message: "检查更新失败。",
@@ -366,14 +328,85 @@ export function useSkillManager() {
     });
   }
 
-  async function openLatestDownload() {
-    const url = updateStatus.value?.downloadUrl ?? updateStatus.value?.releaseUrl;
-    if (!url) {
-      return;
-    }
-
+  async function installLatestUpdate() {
     await runAction(async () => {
-      await openUrl(url);
+      const currentVersion =
+        appVersion.value ||
+        (await getVersion().catch(() => "")) ||
+        "";
+
+      updateStatus.value = {
+        status: "checking",
+        endpoint: UPDATE_ENDPOINT_URL,
+        currentVersion,
+        releaseUrl: RELEASES_PAGE_URL,
+        message: "正在检查可用更新...",
+        integrationNote: "通过 Tauri updater 执行一键更新。",
+      };
+
+      const update = await check();
+
+      if (!update) {
+        updateStatus.value = {
+          status: "current",
+          endpoint: UPDATE_ENDPOINT_URL,
+          currentVersion,
+          releaseUrl: RELEASES_PAGE_URL,
+          message: `当前已是最新版本 ${currentVersion || "-"}。`,
+          integrationNote: "没有需要安装的更新。",
+        };
+        return false;
+      }
+
+      updateStatus.value = updateAvailableStatus(
+        update,
+        currentVersion,
+        `发现新版本 ${update.version}，正在下载更新...`,
+      );
+
+      let downloaded = 0;
+      let contentLength: number | undefined;
+
+      const onDownloadEvent = (event: DownloadEvent) => {
+        if (event.event === "Started") {
+          downloaded = 0;
+          contentLength = event.data.contentLength;
+        } else if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+        }
+
+        if (event.event === "Finished") {
+          updateStatus.value = {
+            ...updateAvailableStatus(update, currentVersion),
+            status: "installing",
+            message: "下载完成，正在安装更新...",
+          };
+          return;
+        }
+
+        const progressText = contentLength
+          ? `${Math.min(100, Math.round((downloaded / contentLength) * 100))}% (${formatBytes(
+              downloaded,
+            )} / ${formatBytes(contentLength)})`
+          : formatBytes(downloaded);
+
+        updateStatus.value = {
+          ...updateAvailableStatus(update, currentVersion),
+          status: "downloading",
+          message: `正在下载更新 ${progressText}。`,
+        };
+      };
+
+      await update.downloadAndInstall(onDownloadEvent);
+
+      updateStatus.value = {
+        ...updateAvailableStatus(update, currentVersion),
+        status: "installed",
+        message: "更新已安装，正在重启应用...",
+      };
+      statusMessage.value = "更新已安装，正在重启应用...";
+
+      await relaunch();
     });
   }
 
@@ -692,7 +725,7 @@ export function useSkillManager() {
     refreshPublishTargets,
     refreshScopeData,
     refreshUpdateStatus,
+    installLatestUpdate,
     openReleasePage,
-    openLatestDownload,
   };
 }

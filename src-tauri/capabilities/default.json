@@ -8,6 +8,8 @@
     "dialog:default",
     "opener:default",
     "opener:allow-open-path",
-    "dialog:allow-confirm"
+    "dialog:allow-confirm",
+    "updater:default",
+    "process:default"
   ]
 }

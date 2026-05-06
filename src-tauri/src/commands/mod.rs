@@ -14,14 +14,13 @@ use crate::{
     models::{
         AppState, CommandResult, DeleteSkillRequest, OperationResult, PublishFolderRequest,
         PublishMode, PublishSkillRequest, RemoveFolderRequest, RemoveSkillRequest, ScanResult,
-        ScopeSelection, TargetScanResult, UpdateStatus, Workspace, WorkspaceGitDetail,
+        ScopeSelection, TargetScanResult, Workspace, WorkspaceGitDetail,
     },
     paths::{absolute_path, ensure_existing_dir, path_to_string, validate_child_name},
     state::{
         global_base_child, load_and_prepare_state, load_state, normalize_enabled_targets,
         save_state, workspace_id, DEFAULT_BASE_FOLDER_NAME, SUPPORTED_TARGETS,
     },
-    update::check_for_updates as load_update_status,
 };
 
 #[tauri::command]
@@ -269,11 +268,6 @@ pub(crate) fn delete_skill(
 ) -> CommandResult<OperationResult> {
     let state = load_state(&app)?;
     delete_scope_skill(&app, &state, &request)
-}
-
-#[tauri::command]
-pub(crate) fn check_for_updates() -> UpdateStatus {
-    load_update_status()
 }
 
 fn is_managed_folder(path: &Path, state: &AppState) -> bool {

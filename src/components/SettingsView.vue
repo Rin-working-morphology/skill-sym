@@ -196,6 +196,41 @@
               </div>
             </dl>
 
+            <div v-if="updateStatus" class="update-summary">
+              <span
+                class="status-pill"
+                :class="`status-${updateStatusClass(updateStatus.status)}`"
+              >
+                {{ updateStatusLabel(updateStatus.status) }}
+              </span>
+              <p>{{ updateStatus.message }}</p>
+              <small v-if="updateStatus.integrationNote">
+                {{ updateStatus.integrationNote }}
+              </small>
+
+              <dl
+                v-if="
+                  updateStatus.latestVersion ||
+                  updateStatus.publishedAt ||
+                  updateStatus.endpoint
+                "
+                class="update-detail-grid"
+              >
+                <div v-if="updateStatus.latestVersion">
+                  <dt>可用版本</dt>
+                  <dd>{{ updateStatus.latestVersion }}</dd>
+                </div>
+                <div v-if="updateStatus.publishedAt">
+                  <dt>发布时间</dt>
+                  <dd>{{ updateStatus.publishedAt }}</dd>
+                </div>
+                <div v-if="updateStatus.endpoint">
+                  <dt>更新端点</dt>
+                  <dd>{{ updateStatus.endpoint }}</dd>
+                </div>
+              </dl>
+            </div>
+
             <div class="settings-actions">
               <button
                 type="button"
@@ -205,18 +240,10 @@
                 更新日志
               </button>
               <button
-                v-if="updateStatus?.downloadUrl"
-                type="button"
-                :disabled="busy"
-                @click="emit('openLatestDownload')"
-              >
-                下载安装包
-              </button>
-              <button
                 type="button"
                 class="primary-action"
                 :disabled="busy || updateStatus?.status === 'checking'"
-                @click="emit('refreshUpdateStatus')"
+                @click="emit('installLatestUpdate')"
               >
                 检查更新
               </button>
@@ -229,7 +256,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref } from "vue";
 
 import type {
   AppState,
@@ -244,7 +271,7 @@ import { updateStatusLabel } from "../utils/managerUi";
 
 type SettingsTab = "general" | "targets" | "about";
 
-const props = defineProps<{
+defineProps<{
   busy: boolean;
   state: AppState | null;
   publishMode: PublishMode;
@@ -262,9 +289,8 @@ const emit = defineEmits<{
   setPublishMode: [mode: PublishMode];
   setThemeMode: [mode: ThemeMode];
   togglePublishTarget: [targetId: TargetId];
-  refreshUpdateStatus: [];
+  installLatestUpdate: [];
   openReleasePage: [];
-  openLatestDownload: [];
 }>();
 
 const tabs: { id: SettingsTab; label: string }[] = [
@@ -274,6 +300,10 @@ const tabs: { id: SettingsTab; label: string }[] = [
 ];
 
 const activeTab = ref<SettingsTab>("general");
+
+function updateStatusClass(status: string) {
+  return status.toLowerCase();
+}
 </script>
 
 <style scoped>
@@ -618,6 +648,13 @@ const activeTab = ref<SettingsTab>("general");
 .status-available {
   background: var(--accent);
   color: var(--accent-text);
+}
+
+.status-downloading,
+.status-installing,
+.status-installed {
+  background: var(--control-bg-active);
+  color: var(--text);
 }
 
 .status-current {

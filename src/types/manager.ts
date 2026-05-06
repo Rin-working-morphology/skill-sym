@@ -70,6 +70,9 @@ export interface UpdateStatus {
   status:
     | "checking"
     | "available"
+    | "downloading"
+    | "installing"
+    | "installed"
     | "current"
     | "noRelease"
     | "failed"

@@ -127,12 +127,3 @@ pub(crate) struct OperationResult {
     pub(crate) source: String,
     pub(crate) target: String,
 }
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct UpdateStatus {
-    pub(crate) status: String,
-    pub(crate) endpoint: Option<String>,
-    pub(crate) message: String,
-    pub(crate) integration_note: String,
-}
