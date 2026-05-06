@@ -7,7 +7,11 @@ import {
 } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { relaunch } from "@tauri-apps/plugin-process";
-import { check, type DownloadEvent, type Update } from "@tauri-apps/plugin-updater";
+import {
+  check,
+  type DownloadEvent,
+  type Update,
+} from "@tauri-apps/plugin-updater";
 
 import type {
   AppState,
@@ -32,8 +36,6 @@ import { publishModeLabel, toolMetaForTarget } from "../utils/managerUi";
 const THEME_MODE_STORAGE_KEY = "skillsym-theme-mode";
 const RELEASES_PAGE_URL =
   "https://github.com/Rin-working-morphology/skill-sym/releases";
-const UPDATE_ENDPOINT_URL =
-  "https://github.com/Rin-working-morphology/skill-sym/releases/latest/download/latest.json";
 
 function readStoredThemeMode(): ThemeMode {
   if (typeof window === "undefined") {
@@ -98,7 +100,6 @@ function updateAvailableStatus(
 ): UpdateStatus {
   return {
     status: "available",
-    endpoint: UPDATE_ENDPOINT_URL,
     currentVersion,
     latestVersion: update.version,
     releaseName: update.version,
@@ -162,13 +163,16 @@ export function useSkillManager() {
 
   const activeScope = computed(() => {
     return (
-      scopeOptions.value.find((option) => option.key === selectedScopeKey.value) ??
-      scopeOptions.value[0]
+      scopeOptions.value.find(
+        (option) => option.key === selectedScopeKey.value,
+      ) ?? scopeOptions.value[0]
     );
   });
 
   const allTargetOptions = computed<TargetOption[]>(() =>
-    (targetScan.value?.targets ?? []).map((target) => toolMetaForTarget(target)),
+    (targetScan.value?.targets ?? []).map((target) =>
+      toolMetaForTarget(target),
+    ),
   );
 
   const targetOptions = computed(() =>
@@ -176,7 +180,9 @@ export function useSkillManager() {
   );
 
   const selectedSkill = computed(() => {
-    return scan.value?.skills.find((skill) => skill.name === selectedSkillName.value);
+    return scan.value?.skills.find(
+      (skill) => skill.name === selectedSkillName.value,
+    );
   });
 
   const publishMode = computed<PublishMode>(
@@ -188,7 +194,10 @@ export function useSkillManager() {
     await Promise.all([refreshScopeData(), refreshUpdateStatus()]);
   }
 
-  async function command<T>(name: string, args?: Record<string, unknown>): Promise<T> {
+  async function command<T>(
+    name: string,
+    args?: Record<string, unknown>,
+  ): Promise<T> {
     return invoke<T>(name, args);
   }
 
@@ -206,7 +215,8 @@ export function useSkillManager() {
         statusMessage.value = successMessage;
       }
     } catch (error) {
-      errorMessage.value = error instanceof Error ? error.message : String(error);
+      errorMessage.value =
+        error instanceof Error ? error.message : String(error);
     } finally {
       busy.value = false;
     }
@@ -216,7 +226,11 @@ export function useSkillManager() {
     state.value = await command<AppState>("load_manager_state");
     await refreshWorkspaceGitDetails();
 
-    if (!scopeOptions.value.some((option) => option.key === selectedScopeKey.value)) {
+    if (
+      !scopeOptions.value.some(
+        (option) => option.key === selectedScopeKey.value,
+      )
+    ) {
       selectedScopeKey.value = "global";
     }
   }
@@ -228,9 +242,12 @@ export function useSkillManager() {
       return;
     }
 
-    const details = await command<WorkspaceGitDetail[]>("scan_workspace_git_details", {
-      paths: workspaces.map((workspace) => workspace.path),
-    });
+    const details = await command<WorkspaceGitDetail[]>(
+      "scan_workspace_git_details",
+      {
+        paths: workspaces.map((workspace) => workspace.path),
+      },
+    );
 
     workspaceGitDetails.value = Object.fromEntries(
       details.map((detail) => [detail.path, detail.detail]),
@@ -262,7 +279,9 @@ export function useSkillManager() {
       scope: activeScope.value.scope,
     });
 
-    if (!scan.value.skills.some((skill) => skill.name === selectedSkillName.value)) {
+    if (
+      !scan.value.skills.some((skill) => skill.name === selectedSkillName.value)
+    ) {
       selectedSkillName.value = scan.value.skills[0]?.name ?? "";
     }
   }
@@ -284,13 +303,10 @@ export function useSkillManager() {
 
   async function refreshUpdateStatus() {
     const currentVersion =
-      appVersion.value ||
-      (await getVersion().catch(() => "")) ||
-      "";
+      appVersion.value || (await getVersion().catch(() => "")) || "";
 
     updateStatus.value = {
       status: "checking",
-      endpoint: UPDATE_ENDPOINT_URL,
       currentVersion,
       releaseUrl: RELEASES_PAGE_URL,
       message: "正在检查可用更新...",
@@ -304,7 +320,6 @@ export function useSkillManager() {
         ? updateAvailableStatus(update, currentVersion)
         : {
             status: "current",
-            endpoint: UPDATE_ENDPOINT_URL,
             currentVersion,
             releaseUrl: RELEASES_PAGE_URL,
             message: `当前已是最新版本 ${currentVersion || "-"}。`,
@@ -313,7 +328,6 @@ export function useSkillManager() {
     } catch (error) {
       updateStatus.value = {
         status: "failed",
-        endpoint: UPDATE_ENDPOINT_URL,
         currentVersion,
         releaseUrl: RELEASES_PAGE_URL,
         message: "检查更新失败。",
@@ -331,13 +345,10 @@ export function useSkillManager() {
   async function installLatestUpdate() {
     await runAction(async () => {
       const currentVersion =
-        appVersion.value ||
-        (await getVersion().catch(() => "")) ||
-        "";
+        appVersion.value || (await getVersion().catch(() => "")) || "";
 
       updateStatus.value = {
         status: "checking",
-        endpoint: UPDATE_ENDPOINT_URL,
         currentVersion,
         releaseUrl: RELEASES_PAGE_URL,
         message: "正在检查可用更新...",
@@ -349,7 +360,6 @@ export function useSkillManager() {
       if (!update) {
         updateStatus.value = {
           status: "current",
-          endpoint: UPDATE_ENDPOINT_URL,
           currentVersion,
           releaseUrl: RELEASES_PAGE_URL,
           message: `当前已是最新版本 ${currentVersion || "-"}。`,
@@ -436,7 +446,9 @@ export function useSkillManager() {
         return false;
       }
 
-      const previousIds = new Set(state.value?.workspaces.map((workspace) => workspace.id) ?? []);
+      const previousIds = new Set(
+        state.value?.workspaces.map((workspace) => workspace.id) ?? [],
+      );
       state.value = await command<AppState>("add_workspace", { path });
       await refreshWorkspaceGitDetails();
       viewMode.value = "manager";
@@ -517,9 +529,14 @@ export function useSkillManager() {
       return;
     }
 
-    await runAction(async () => {
-      state.value = await command<AppState>("set_default_publish_mode", { mode });
-    }, `默认方式已切换为${publishModeLabel(mode)}`);
+    await runAction(
+      async () => {
+        state.value = await command<AppState>("set_default_publish_mode", {
+          mode,
+        });
+      },
+      `默认方式已切换为${publishModeLabel(mode)}`,
+    );
   }
 
   function setThemeMode(mode: ThemeMode) {
@@ -677,7 +694,9 @@ export function useSkillManager() {
         scope: activeScope.value.scope,
         skillName,
       };
-      const result = await command<OperationResult>("delete_skill", { request });
+      const result = await command<OperationResult>("delete_skill", {
+        request,
+      });
       statusMessage.value = result.message;
       await refreshScopeData();
     });

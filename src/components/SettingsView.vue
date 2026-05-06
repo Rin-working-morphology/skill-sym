@@ -238,10 +238,6 @@
                   <dt>发布时间</dt>
                   <dd>{{ updateStatus.publishedAt }}</dd>
                 </div>
-                <div v-if="updateStatus.endpoint">
-                  <dt>更新端点</dt>
-                  <dd>{{ updateStatus.endpoint }}</dd>
-                </div>
               </dl>
             </div>
 
