@@ -33,271 +33,38 @@
       </nav>
 
       <Transition name="settings-panel-swap" mode="out-in">
-        <section
+        <SettingsGeneralTab
           v-if="activeTab === 'general'"
           key="general"
-          class="settings-panel"
-          aria-labelledby="settings-general-title"
-        >
-          <div class="settings-section-head">
-            <h2 id="settings-general-title">基础配置</h2>
-          </div>
+          :busy="busy"
+          :state="state"
+          :publish-mode="publishMode"
+          :theme-mode="themeMode"
+          @set-quick-base="emit('setQuickBase', $event)"
+          @choose-global-base-folder="emit('chooseGlobalBaseFolder')"
+          @set-publish-mode="emit('setPublishMode', $event)"
+          @set-theme-mode="emit('setThemeMode', $event)"
+        />
 
-          <article class="setting-card wide">
-            <div class="setting-head">
-              <h3>全局根目录</h3>
-              <small>默认位置</small>
-            </div>
-            <strong class="setting-path">{{
-              state?.globalBaseFolder ?? "-"
-            }}</strong>
-            <div class="mini-actions">
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('setQuickBase', '.claude')"
-              >
-                .claude
-              </button>
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('setQuickBase', '.codex')"
-              >
-                .codex
-              </button>
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('setQuickBase', '.qoder')"
-              >
-                .qoder
-              </button>
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('setQuickBase', '.trae')"
-              >
-                .trae
-              </button>
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('setQuickBase', '.codebuddy')"
-              >
-                .codebuddy
-              </button>
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('chooseGlobalBaseFolder')"
-              >
-                选择目录
-              </button>
-            </div>
-          </article>
-
-          <article class="setting-card wide">
-            <div class="setting-head">
-              <h3>默认复用方式</h3>
-              <small>全局默认</small>
-            </div>
-            <div class="mode-toggle large">
-              <button
-                type="button"
-                :class="{ active: publishMode === 'symlink' }"
-                :disabled="busy"
-                @click="emit('setPublishMode', 'symlink')"
-              >
-                相对链接
-              </button>
-              <button
-                type="button"
-                :class="{ active: publishMode === 'copy' }"
-                :disabled="busy"
-                @click="emit('setPublishMode', 'copy')"
-              >
-                物理复制
-              </button>
-            </div>
-          </article>
-
-          <article class="setting-card wide">
-            <div class="setting-head">
-              <h3>界面主题</h3>
-              <small>本机显示</small>
-            </div>
-            <div class="mode-toggle large theme-toggle">
-              <button
-                type="button"
-                :class="{ active: themeMode === 'light' }"
-                :disabled="busy"
-                @click="emit('setThemeMode', 'light')"
-              >
-                浅色
-              </button>
-              <button
-                type="button"
-                :class="{ active: themeMode === 'dark' }"
-                :disabled="busy"
-                @click="emit('setThemeMode', 'dark')"
-              >
-                深色
-              </button>
-            </div>
-          </article>
-        </section>
-
-        <section
+        <SettingsTargetsTab
           v-else-if="activeTab === 'targets'"
           key="targets"
-          class="settings-panel"
-          aria-labelledby="settings-targets-title"
-        >
-          <div class="settings-section-head">
-            <div class="settings-section-title-row">
-              <h2 id="settings-targets-title">目标启用状态</h2>
-              <button
-                type="button"
-                class="add-target-button"
-                :disabled="busy"
-                @click="customTargetFormOpen = true"
-              >
-                添加
-              </button>
-            </div>
-          </div>
+          :busy="busy"
+          :target-options="targetOptions"
+          @toggle-publish-target="emit('togglePublishTarget', $event)"
+          @add-custom-publish-target="emit('addCustomPublishTarget', $event)"
+        />
 
-          <article class="setting-card wide">
-            <div class="target-button-group">
-              <button
-                v-for="target in targetOptions"
-                :key="target.id"
-                type="button"
-                class="target-toggle"
-                :class="{ active: target.enabled }"
-                :aria-pressed="target.enabled"
-                :disabled="busy"
-                :title="target.path"
-                @click="emit('togglePublishTarget', target.id)"
-              >
-                <span class="tool-avatar" :class="target.tone">
-                  <img
-                    v-if="target.iconSrc"
-                    :src="target.iconSrc"
-                    :alt="target.name"
-                  />
-                  <span v-else>{{ target.shortLabel }}</span>
-                </span>
-                <span>
-                  <strong>{{ target.name }}</strong>
-                  <small>{{ target.folderName }}</small>
-                </span>
-              </button>
-            </div>
-          </article>
-
-          <CustomTargetForm
-            v-if="customTargetFormOpen"
-            :busy="busy"
-            @cancel="customTargetFormOpen = false"
-            @submit="submitCustomTarget"
-          />
-        </section>
-
-        <section
+        <SettingsAboutTab
           v-else
           key="about"
-          class="settings-panel"
-          aria-labelledby="settings-about-title"
-        >
-          <div class="settings-section-head">
-            <h2 id="settings-about-title">版本信息</h2>
-          </div>
-
-          <article class="setting-card wide about-card">
-            <div class="about-overview">
-              <div class="about-product">
-                <span class="about-mark" aria-hidden="true">S</span>
-                <div class="about-title-block">
-                  <h3>{{ appName }}</h3>
-                  <small>本机技能同步管理器</small>
-                </div>
-              </div>
-
-              <dl class="about-version-list">
-                <div>
-                  <dt>当前版本</dt>
-                  <dd>{{ appVersion || "-" }}</dd>
-                </div>
-                <div v-if="updateStatus?.latestVersion">
-                  <dt>可用版本</dt>
-                  <dd>{{ updateStatus.latestVersion }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div v-if="updateStatus" class="update-summary">
-              <div class="update-summary-head">
-                <span
-                  class="status-pill"
-                  :class="`status-${updateStatusClass(updateStatus.status)}`"
-                >
-                  {{ updateStatusLabel(updateStatus.status) }}
-                </span>
-              </div>
-              <p>{{ updateStatus.message }}</p>
-              <small v-if="updateStatus.integrationNote">
-                {{ updateStatus.integrationNote }}
-              </small>
-
-              <dl
-                v-if="
-                  updateStatus.publishedAt ||
-                  updateStatus.releaseName ||
-                  updateStatus.assetName ||
-                  updateStatus.endpoint
-                "
-                class="update-detail-list"
-              >
-                <div v-if="updateStatus.publishedAt">
-                  <dt>发布时间</dt>
-                  <dd>{{ updateStatus.publishedAt }}</dd>
-                </div>
-                <div v-if="updateStatus.releaseName">
-                  <dt>发布名称</dt>
-                  <dd>{{ updateStatus.releaseName }}</dd>
-                </div>
-                <div v-if="updateStatus.assetName">
-                  <dt>安装包</dt>
-                  <dd>{{ updateStatus.assetName }}</dd>
-                </div>
-                <div v-if="updateStatus.endpoint">
-                  <dt>更新源</dt>
-                  <dd>{{ updateStatus.endpoint }}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div class="settings-actions about-actions">
-              <button
-                type="button"
-                :disabled="busy"
-                @click="emit('openReleasePage')"
-              >
-                更新日志
-              </button>
-              <button
-                type="button"
-                class="primary-action"
-                :disabled="busy || updateStatus?.status === 'checking'"
-                @click="emit('installLatestUpdate')"
-              >
-                检查更新
-              </button>
-            </div>
-          </article>
-        </section>
+          :busy="busy"
+          :app-name="appName"
+          :app-version="appVersion"
+          :update-status="updateStatus"
+          @install-latest-update="emit('installLatestUpdate')"
+          @open-release-page="emit('openReleasePage')"
+        />
       </Transition>
     </div>
   </section>
@@ -306,7 +73,9 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
-import CustomTargetForm from "./CustomTargetForm.vue";
+import SettingsAboutTab from "./SettingsAboutTab.vue";
+import SettingsGeneralTab from "./SettingsGeneralTab.vue";
+import SettingsTargetsTab from "./SettingsTargetsTab.vue";
 import type {
   AppState,
   BaseFolderPreset,
@@ -316,7 +85,6 @@ import type {
   ThemeMode,
   UpdateStatus,
 } from "../types/manager";
-import { updateStatusLabel } from "../utils/managerUi";
 
 type SettingsTab = "general" | "targets" | "about";
 
@@ -350,16 +118,6 @@ const tabs: { id: SettingsTab; label: string }[] = [
 ];
 
 const activeTab = ref<SettingsTab>("general");
-const customTargetFormOpen = ref(false);
-
-function updateStatusClass(status: string) {
-  return status.toLowerCase();
-}
-
-function submitCustomTarget(payload: { name: string; folderName: string }) {
-  emit("addCustomPublishTarget", payload);
-  customTargetFormOpen.value = false;
-}
 </script>
 
 <style scoped>
@@ -480,404 +238,6 @@ function submitCustomTarget(payload: { name: string; folderName: string }) {
   font-weight: var(--font-label);
 }
 
-.settings-panel {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 18px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
-}
-
-.settings-section-head {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--line);
-}
-
-.settings-section-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.add-target-button {
-  min-height: 24px;
-  border-color: transparent;
-  background: var(--accent);
-  box-shadow: none;
-  color: var(--accent-text);
-  font-size: var(--type-button-compact);
-}
-
-.add-target-button:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: none;
-}
-
-.setting-card {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  max-width: 760px;
-  padding: 0 0 14px;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
-}
-
-.setting-card.wide {
-  width: min(100%, 760px);
-}
-
-.setting-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.setting-path {
-  font-size: 0.8rem;
-  font-weight: var(--font-body);
-  overflow-wrap: anywhere;
-}
-
-.mini-actions,
-.settings-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-}
-
-.mode-toggle {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px;
-  border: 0;
-  border-radius: 5px;
-  background: var(--surface-muted);
-  width: fit-content;
-}
-
-.mode-toggle button {
-  min-height: 24px;
-  border-color: transparent;
-  border-radius: 4px;
-  background: transparent;
-  box-shadow: none;
-  font-size: var(--type-button-compact);
-}
-
-.mode-toggle button.active {
-  border-color: var(--selection-stroke);
-  background: var(--surface);
-  color: var(--text);
-  font-weight: var(--font-label);
-}
-
-.target-toggle.active {
-  background: var(--surface);
-  box-shadow: none;
-  color: var(--text);
-  font-weight: var(--font-label);
-}
-
-.mode-toggle.large button {
-  min-width: 92px;
-  font-size: var(--type-button);
-}
-
-.target-button-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-
-.target-toggle {
-  min-width: 132px;
-  flex: 1 1 132px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 7px;
-  min-height: 42px;
-  padding: 6px 8px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  font-size: var(--type-button);
-  text-align: left;
-  transition:
-    background-color var(--motion-base) var(--ease-out-quint),
-    color var(--motion-base) var(--ease-out-quint),
-    transform var(--motion-fast) var(--ease-out-quart);
-}
-
-.target-toggle:hover:not(:disabled) {
-  background: var(--control-bg-hover);
-  box-shadow: none;
-}
-
-.target-toggle.active {
-  background: var(--control-bg-active);
-}
-
-.target-toggle > span:last-child {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.target-toggle small {
-  font-size: var(--type-button-compact);
-}
-
-.target-toggle strong,
-.target-toggle small {
-  overflow-wrap: anywhere;
-}
-
-.tool-avatar {
-  width: 26px;
-  height: 26px;
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 5px;
-  background: var(--surface-muted);
-  color: var(--text-muted);
-  transition:
-    background-color var(--motion-base) var(--ease-out-quint),
-    color var(--motion-base) var(--ease-out-quint),
-    transform var(--motion-fast) var(--ease-out-quart);
-}
-
-.target-toggle:hover:not(:disabled) .tool-avatar,
-.target-toggle.active .tool-avatar {
-  transform: translateY(-1px);
-}
-
-.tool-avatar img {
-  width: 15px;
-  height: 15px;
-  opacity: 0.76;
-  transition:
-    opacity var(--motion-base) var(--ease-out-quint),
-    transform var(--motion-fast) var(--ease-out-quart);
-}
-
-.target-toggle:hover:not(:disabled) .tool-avatar img {
-  opacity: 0.92;
-  transform: scale(1.04);
-}
-
-.tool-avatar span {
-  color: inherit;
-  font-size: var(--type-button-compact);
-  font-weight: var(--font-label);
-}
-
-.tool-avatar.generic {
-  color: var(--custom-target-icon-text);
-}
-
-.about-card {
-  gap: 14px;
-}
-
-.about-overview {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 260px);
-  gap: 14px;
-  align-items: stretch;
-}
-
-.about-product {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 0;
-}
-
-.about-mark {
-  width: 34px;
-  min-width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  background: var(--surface-muted);
-  color: var(--text);
-  font-size: 0.9rem;
-  font-weight: var(--font-heading);
-  line-height: 1;
-}
-
-.about-title-block {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.about-title-block h3,
-.about-title-block small {
-  overflow-wrap: anywhere;
-}
-
-.about-version-list {
-  display: grid;
-  align-content: center;
-  gap: 0;
-  margin: 0;
-  border-top: 1px solid color-mix(in oklch, var(--line) 76%, transparent);
-  border-bottom: 1px solid color-mix(in oklch, var(--line) 76%, transparent);
-}
-
-.about-version-list div {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 8px;
-  align-items: baseline;
-  padding: 7px 0;
-  border-bottom: 1px solid color-mix(in oklch, var(--line) 68%, transparent);
-}
-
-.about-version-list div:last-child {
-  border-bottom: 0;
-}
-
-.about-version-list dt,
-.update-detail-list dt {
-  color: var(--text-muted);
-  font-size: 0.76rem;
-  font-weight: var(--font-label);
-}
-
-.about-version-list dd,
-.update-detail-list dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-  color: var(--text);
-  font-size: 0.84rem;
-}
-
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--text-muted);
-  font-size: var(--type-button-compact);
-  font-weight: var(--font-label);
-}
-
-.status-available {
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
-.status-downloading,
-.status-installing,
-.status-installed {
-  background: var(--control-bg-active);
-  color: var(--text);
-}
-
-.status-current {
-  background: var(--control-bg-active);
-  color: var(--text);
-}
-
-.status-failed,
-.status-norelease {
-  background: var(--surface-muted);
-  color: var(--text-muted);
-}
-
-.update-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  border-radius: 6px;
-  background: var(--surface-muted);
-}
-
-.update-summary-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 7px;
-}
-
-.update-summary-head strong {
-  color: var(--text);
-  font-size: 0.84rem;
-}
-
-.update-summary p {
-  margin: 0;
-  font-size: 0.84rem;
-}
-
-.update-summary small {
-  overflow-wrap: anywhere;
-}
-
-.update-detail-list {
-  display: grid;
-  gap: 0;
-  margin: 2px 0 0;
-  border-top: 1px solid color-mix(in oklch, var(--line) 72%, transparent);
-}
-
-.update-detail-list div {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 8px;
-  padding: 7px 0;
-  border-bottom: 1px solid color-mix(in oklch, var(--line) 62%, transparent);
-}
-
-.update-detail-list div:last-child {
-  border-bottom: 0;
-}
-
-.about-actions {
-  padding-top: 2px;
-}
-
-.primary-action {
-  border-color: transparent;
-  background: var(--accent);
-  box-shadow: none;
-  color: var(--accent-text);
-}
-
-.primary-action:hover:not(:disabled) {
-  background: var(--accent-hover);
-  box-shadow: none;
-}
-
 .settings-panel-swap-enter-active,
 .settings-panel-swap-leave-active {
   transition:
@@ -903,8 +263,7 @@ function submitCustomTarget(payload: { name: string; folderName: string }) {
 }
 
 @media (max-width: 720px) {
-  .settings-topbar,
-  .settings-panel {
+  .settings-topbar {
     padding-left: 14px;
     padding-right: 14px;
   }
@@ -927,18 +286,6 @@ function submitCustomTarget(payload: { name: string; folderName: string }) {
   .settings-tabs button {
     min-width: max-content;
     justify-content: center;
-  }
-
-  .about-overview {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .about-product {
-    padding: 4px 0 0;
-  }
-
-  .mode-toggle.large button {
-    min-width: 82px;
   }
 }
 </style>
