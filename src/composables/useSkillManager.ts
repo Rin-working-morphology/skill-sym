@@ -591,6 +591,19 @@ export function useSkillManager() {
     }, "发布目标已更新");
   }
 
+  async function addCustomPublishTarget(payload: {
+    name: string;
+    folderName: string;
+  }) {
+    await runAction(async () => {
+      state.value = await command<AppState>("add_custom_publish_target", {
+        name: payload.name,
+        folderName: payload.folderName,
+      });
+      await refreshPublishTargets();
+    }, "发布目标已添加");
+  }
+
   function isSkillPublished(skillName: string, target: TargetOption) {
     return target.installedSkillNames.includes(skillName);
   }
@@ -735,6 +748,7 @@ export function useSkillManager() {
     setViewMode,
     selectSkill,
     togglePublishTarget,
+    addCustomPublishTarget,
     isSkillPublished,
     isFolderPublished,
     publishWholeFolderToTarget,

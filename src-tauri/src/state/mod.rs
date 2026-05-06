@@ -1,5 +1,5 @@
 use std::{
-    collections::hash_map::DefaultHasher,
+    collections::{hash_map::DefaultHasher, HashSet},
     fs,
     hash::{Hash, Hasher},
     path::{Path, PathBuf},
@@ -20,6 +20,13 @@ pub(crate) struct SupportedTarget {
     pub(crate) id: &'static str,
     pub(crate) name: &'static str,
     pub(crate) folder_name: &'static str,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct PublishTargetDefinition {
+    pub(crate) id: String,
+    pub(crate) name: String,
+    pub(crate) folder_name: String,
 }
 
 pub(crate) const SUPPORTED_TARGETS: &[SupportedTarget] = &[
@@ -98,11 +105,61 @@ pub(crate) fn default_enabled_target_ids() -> Vec<String> {
 }
 
 pub(crate) fn normalize_enabled_targets(state: &mut AppState) {
+    normalize_custom_publish_targets(state);
+    let supported_targets = configured_publish_targets(state);
     state
         .enabled_target_ids
-        .retain(|id| SUPPORTED_TARGETS.iter().any(|target| target.id == id));
+        .retain(|id| supported_targets.iter().any(|target| &target.id == id));
     state.enabled_target_ids.sort();
     state.enabled_target_ids.dedup();
+}
+
+pub(crate) fn configured_publish_targets(state: &AppState) -> Vec<PublishTargetDefinition> {
+    let mut targets: Vec<PublishTargetDefinition> = SUPPORTED_TARGETS
+        .iter()
+        .map(|target| PublishTargetDefinition {
+            id: target.id.to_string(),
+            name: target.name.to_string(),
+            folder_name: target.folder_name.to_string(),
+        })
+        .collect();
+
+    targets.extend(
+        state
+            .custom_publish_targets
+            .iter()
+            .map(|target| PublishTargetDefinition {
+                id: target.id.clone(),
+                name: target.name.clone(),
+                folder_name: target.folder_name.clone(),
+            }),
+    );
+    targets
+}
+
+fn normalize_custom_publish_targets(state: &mut AppState) {
+    let mut seen_ids: HashSet<String> = SUPPORTED_TARGETS
+        .iter()
+        .map(|target| target.id.to_lowercase())
+        .collect();
+    let mut seen_folder_names: HashSet<String> = SUPPORTED_TARGETS
+        .iter()
+        .map(|target| target.folder_name.to_lowercase())
+        .collect();
+
+    state.custom_publish_targets.retain(|target| {
+        let id = target.id.trim().to_lowercase();
+        let folder_name = target.folder_name.trim().to_lowercase();
+
+        !id.is_empty()
+            && !target.name.trim().is_empty()
+            && !folder_name.is_empty()
+            && seen_ids.insert(id)
+            && seen_folder_names.insert(folder_name)
+    });
+    state
+        .custom_publish_targets
+        .sort_by_key(|target| target.name.to_lowercase());
 }
 
 pub(crate) fn global_base_child(app: &AppHandle, folder_name: &str) -> CommandResult<PathBuf> {
@@ -159,6 +216,7 @@ fn default_state(app: &AppHandle) -> CommandResult<AppState> {
         global_base_folder: path_to_string(&global_base_folder),
         workspaces: Vec::new(),
         target_base_folders: Vec::new(),
+        custom_publish_targets: Vec::new(),
         enabled_target_ids: default_enabled_target_ids(),
         default_publish_mode: default_publish_mode(),
     })
@@ -271,6 +329,7 @@ mod tests {
             )),
             workspaces: Vec::<Workspace>::new(),
             target_base_folders: Vec::new(),
+            custom_publish_targets: Vec::new(),
             enabled_target_ids: default_enabled_target_ids(),
             default_publish_mode: default_publish_mode(),
         };
@@ -316,6 +375,7 @@ mod tests {
             global_base_folder: r"C:\Users\Rin\.claude".to_string(),
             workspaces: Vec::<Workspace>::new(),
             target_base_folders: vec![r"C:\Users\Rin\.codex".to_string()],
+            custom_publish_targets: Vec::new(),
             enabled_target_ids: default_enabled_target_ids(),
             default_publish_mode: PublishMode::Copy,
         };
@@ -335,6 +395,7 @@ mod tests {
             global_base_folder: path_to_string(custom),
             workspaces: Vec::<Workspace>::new(),
             target_base_folders: Vec::new(),
+            custom_publish_targets: Vec::new(),
             enabled_target_ids: default_enabled_target_ids(),
             default_publish_mode: default_publish_mode(),
         };

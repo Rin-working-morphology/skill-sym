@@ -13,10 +13,20 @@ pub(crate) struct Workspace {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub(crate) struct CustomPublishTarget {
+    pub(crate) id: String,
+    pub(crate) name: String,
+    pub(crate) folder_name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct AppState {
     pub(crate) global_base_folder: String,
     pub(crate) workspaces: Vec<Workspace>,
     pub(crate) target_base_folders: Vec<String>,
+    #[serde(default)]
+    pub(crate) custom_publish_targets: Vec<CustomPublishTarget>,
     #[serde(default = "crate::state::default_enabled_target_ids")]
     pub(crate) enabled_target_ids: Vec<String>,
     #[serde(default = "crate::state::default_publish_mode")]

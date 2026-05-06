@@ -12,7 +12,7 @@ use crate::{
         RemoveSkillRequest, ScanResult, ScopeSelection, SkillEntry, TargetScanResult,
     },
     paths::{absolute_path, path_to_string, readable_io_error, validate_child_name},
-    state::{scope_skills_path, target_root_path, SKILLS_FOLDER_NAME, SUPPORTED_TARGETS},
+    state::{configured_publish_targets, scope_skills_path, target_root_path, SKILLS_FOLDER_NAME},
 };
 
 pub(crate) fn scan_scope_skills(
@@ -74,8 +74,8 @@ pub(crate) fn scan_scope_publish_targets(
     let source_skills = absolute_path(&scope_skills_path(state, scope)?)?;
     let mut targets = Vec::new();
 
-    for supported in SUPPORTED_TARGETS {
-        let base_folder = root.join(supported.folder_name);
+    for supported in configured_publish_targets(state) {
+        let base_folder = root.join(&supported.folder_name);
         let skills_path = base_folder.join(SKILLS_FOLDER_NAME);
         let installed_skill_names = installed_skill_names(&skills_path)?;
         let has_skills_folder = fs::symlink_metadata(&skills_path).is_ok();
@@ -83,14 +83,18 @@ pub(crate) fn scan_scope_publish_targets(
         let is_source =
             paths_match_without_following_final_symlink(&source_skills, &skills_path_abs);
         let protects_source_children = paths_equal(&source_skills, &skills_path_abs);
+        let enabled = state
+            .enabled_target_ids
+            .iter()
+            .any(|id| id == &supported.id);
 
         targets.push(PublishTargetStatus {
-            id: supported.id.to_string(),
-            name: supported.name.to_string(),
-            folder_name: supported.folder_name.to_string(),
+            id: supported.id,
+            name: supported.name,
+            folder_name: supported.folder_name,
             base_folder: path_to_string(&base_folder),
             skills_path: path_to_string(&skills_path),
-            enabled: state.enabled_target_ids.iter().any(|id| id == supported.id),
+            enabled,
             is_source,
             protects_source_children,
             has_skills_folder,
@@ -368,8 +372,8 @@ fn publish_target_base_paths(
     scope: &ScopeSelection,
 ) -> CommandResult<Vec<PathBuf>> {
     let root = target_root_path(app, state, scope)?;
-    let mut paths: Vec<PathBuf> = SUPPORTED_TARGETS
-        .iter()
+    let mut paths: Vec<PathBuf> = configured_publish_targets(state)
+        .into_iter()
         .map(|target| root.join(target.folder_name))
         .chain(state.target_base_folders.iter().map(PathBuf::from))
         .collect();
@@ -521,10 +525,8 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system time should be after UNIX_EPOCH")
             .as_nanos();
-        let path = std::env::temp_dir().join(format!(
-            "skillsym-{name}-{}-{nanos}",
-            std::process::id()
-        ));
+        let path =
+            std::env::temp_dir().join(format!("skillsym-{name}-{}-{nanos}", std::process::id()));
         fs::create_dir_all(&path).expect("test temp directory should be created");
         path
     }
@@ -541,6 +543,7 @@ mod tests {
             global_base_folder: path_to_string(base_folder),
             workspaces: Vec::<Workspace>::new(),
             target_base_folders: Vec::new(),
+            custom_publish_targets: Vec::new(),
             enabled_target_ids: default_enabled_target_ids(),
             default_publish_mode: default_publish_mode(),
         }

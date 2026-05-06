@@ -1,5 +1,7 @@
 use std::{
+    collections::hash_map::DefaultHasher,
     fs,
+    hash::{Hash, Hasher},
     path::{Path, PathBuf},
 };
 
@@ -12,14 +14,15 @@ use crate::{
         scan_scope_skills,
     },
     models::{
-        AppState, CommandResult, DeleteSkillRequest, OperationResult, PublishFolderRequest,
-        PublishMode, PublishSkillRequest, RemoveFolderRequest, RemoveSkillRequest, ScanResult,
-        ScopeSelection, TargetScanResult, Workspace, WorkspaceGitDetail,
+        AppState, CommandResult, CustomPublishTarget, DeleteSkillRequest, OperationResult,
+        PublishFolderRequest, PublishMode, PublishSkillRequest, RemoveFolderRequest,
+        RemoveSkillRequest, ScanResult, ScopeSelection, TargetScanResult, Workspace,
+        WorkspaceGitDetail,
     },
     paths::{absolute_path, ensure_existing_dir, path_to_string, validate_child_name},
     state::{
-        global_base_child, load_and_prepare_state, load_state, normalize_enabled_targets,
-        save_state, workspace_id, DEFAULT_BASE_FOLDER_NAME, SUPPORTED_TARGETS,
+        configured_publish_targets, global_base_child, load_and_prepare_state, load_state,
+        normalize_enabled_targets, save_state, workspace_id, DEFAULT_BASE_FOLDER_NAME,
     },
 };
 
@@ -181,6 +184,48 @@ pub(crate) fn remove_target_base_folder(app: AppHandle, path: String) -> Command
 }
 
 #[tauri::command]
+pub(crate) fn add_custom_publish_target(
+    app: AppHandle,
+    name: String,
+    folder_name: String,
+) -> CommandResult<AppState> {
+    let target_name = name.trim();
+    let target_folder_name = folder_name.trim();
+
+    if target_name.is_empty() {
+        return Err("目标名称不能为空。".to_string());
+    }
+    validate_child_name(target_folder_name)
+        .map_err(|_| "存放位置必须是单个文件夹名称。".to_string())?;
+
+    let mut state = load_state(&app)?;
+    let existing_targets = configured_publish_targets(&state);
+    if existing_targets
+        .iter()
+        .any(|target| target.name.eq_ignore_ascii_case(target_name))
+    {
+        return Err("已存在同名发布目标。".to_string());
+    }
+    if existing_targets
+        .iter()
+        .any(|target| target.folder_name.eq_ignore_ascii_case(target_folder_name))
+    {
+        return Err("已存在相同存放位置的发布目标。".to_string());
+    }
+
+    let id = custom_publish_target_id(target_name, target_folder_name);
+    state.custom_publish_targets.push(CustomPublishTarget {
+        id: id.clone(),
+        name: target_name.to_string(),
+        folder_name: target_folder_name.to_string(),
+    });
+    state.enabled_target_ids.push(id);
+    normalize_enabled_targets(&mut state);
+    save_state(&app, &state)?;
+    Ok(state)
+}
+
+#[tauri::command]
 pub(crate) fn set_default_publish_mode(
     app: AppHandle,
     mode: PublishMode,
@@ -196,14 +241,15 @@ pub(crate) fn set_enabled_publish_targets(
     app: AppHandle,
     target_ids: Vec<String>,
 ) -> CommandResult<AppState> {
+    let mut state = load_state(&app)?;
+    let supported_targets = configured_publish_targets(&state);
     if target_ids
         .iter()
-        .any(|id| !SUPPORTED_TARGETS.iter().any(|target| target.id == id))
+        .any(|id| !supported_targets.iter().any(|target| &target.id == id))
     {
         return Err("包含不支持的发布目标。".to_string());
     }
 
-    let mut state = load_state(&app)?;
     state.enabled_target_ids = target_ids;
     normalize_enabled_targets(&mut state);
     save_state(&app, &state)?;
@@ -309,6 +355,24 @@ fn managed_path_matches(path: &Path, allowed_path: &str) -> bool {
         (Some(path), Some(allowed_path)) => path == allowed_path,
         _ => absolute_path_or_self(path) == absolute_path_or_self(Path::new(allowed_path)),
     }
+}
+
+fn custom_publish_target_id(name: &str, folder_name: &str) -> String {
+    let slug: String = name
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .flat_map(|character| character.to_lowercase())
+        .take(24)
+        .collect();
+    let slug = if slug.is_empty() {
+        "target".to_string()
+    } else {
+        slug
+    };
+    let mut hasher = DefaultHasher::new();
+    name.to_lowercase().hash(&mut hasher);
+    folder_name.to_lowercase().hash(&mut hasher);
+    format!("custom-{slug}-{:x}", hasher.finish())
 }
 
 fn existing_canonical_path(path: &Path) -> Option<PathBuf> {

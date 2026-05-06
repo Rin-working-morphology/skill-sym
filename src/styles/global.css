@@ -15,6 +15,7 @@
   --accent-soft: oklch(0.955 0.035 75);
   --accent-text: oklch(0.991 0.0015 248);
   --selection-stroke: color-mix(in oklch, var(--accent-point) 70%, transparent);
+  --custom-target-icon-text: oklch(0.173 0.015 267);
 
   --control-bg: transparent;
   --control-bg-hover: color-mix(
@@ -101,6 +102,7 @@
   --accent-soft: oklch(0.285 0.04 82);
   --accent-text: oklch(0.173 0.015 267);
   --selection-stroke: color-mix(in oklch, var(--accent-point) 84%, var(--bg));
+  --custom-target-icon-text: oklch(0.991 0.0015 248);
 
   --control-bg: transparent;
   --control-bg-hover: color-mix(

@@ -5,11 +5,12 @@ mod paths;
 mod state;
 
 use commands::{
-    add_target_base_folder, add_workspace, delete_skill, load_manager_state, open_managed_folder,
-    publish_skill, publish_skills_folder, remove_published_skill, remove_published_skills_folder,
-    remove_target_base_folder, remove_workspace, scan_publish_targets, scan_skills,
-    scan_workspace_git_details, set_default_publish_mode, set_enabled_publish_targets,
-    set_scope_base_child, set_scope_base_folder,
+    add_custom_publish_target, add_target_base_folder, add_workspace, delete_skill,
+    load_manager_state, open_managed_folder, publish_skill, publish_skills_folder,
+    remove_published_skill, remove_published_skills_folder, remove_target_base_folder,
+    remove_workspace, scan_publish_targets, scan_skills, scan_workspace_git_details,
+    set_default_publish_mode, set_enabled_publish_targets, set_scope_base_child,
+    set_scope_base_folder,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -35,6 +36,7 @@ pub fn run() {
             set_scope_base_child,
             add_target_base_folder,
             remove_target_base_folder,
+            add_custom_publish_target,
             set_default_publish_mode,
             set_enabled_publish_targets,
             scan_skills,

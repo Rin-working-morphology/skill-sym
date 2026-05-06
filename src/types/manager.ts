@@ -2,13 +2,7 @@ export type ScopeKind = "global" | "workspace";
 export type PublishMode = "symlink" | "copy";
 export type ViewMode = "manager" | "settings";
 export type ThemeMode = "light" | "dark";
-export type TargetId =
-  | "claude"
-  | "codex"
-  | "qoder"
-  | "gemini"
-  | "trae"
-  | "codebuddy";
+export type TargetId = string;
 export type BaseFolderPreset =
   | ".claude"
   | ".codex"
@@ -35,8 +29,15 @@ export interface AppState {
   globalBaseFolder: string;
   workspaces: Workspace[];
   targetBaseFolders: string[];
+  customPublishTargets: CustomPublishTarget[];
   enabledTargetIds: TargetId[];
   defaultPublishMode: PublishMode;
+}
+
+export interface CustomPublishTarget {
+  id: string;
+  name: string;
+  folderName: string;
 }
 
 export interface ScopeSelection {

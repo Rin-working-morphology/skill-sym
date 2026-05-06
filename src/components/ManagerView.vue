@@ -708,8 +708,13 @@ function baseFolderText() {
 }
 
 .tool-action span {
+  color: inherit;
   font-size: var(--type-button-compact);
   font-weight: var(--font-label);
+}
+
+.tool-action.generic {
+  color: var(--custom-target-icon-text);
 }
 
 .delete-action {

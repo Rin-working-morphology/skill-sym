@@ -61,6 +61,7 @@
       @set-publish-mode="setDefaultPublishMode"
       @set-theme-mode="setThemeMode"
       @toggle-publish-target="togglePublishTarget"
+      @add-custom-publish-target="addCustomPublishTarget"
       @install-latest-update="installLatestUpdate"
       @open-release-page="openReleasePage"
     />
@@ -113,6 +114,7 @@ const {
   setViewMode,
   selectSkill,
   togglePublishTarget,
+  addCustomPublishTarget,
   isSkillPublished,
   isFolderPublished,
   publishWholeFolderToTarget,

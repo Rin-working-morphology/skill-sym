@@ -44,7 +44,7 @@ export function updateStatusLabel(status?: string) {
 
 export function toolMetaForTarget(target: PublishTargetStatus): TargetOption {
   const meta = targetMeta[target.id] ?? {
-    shortLabel: target.name.slice(0, 2).toUpperCase(),
+    shortLabel: targetInitial(target.name),
     iconSrc: null,
     tone: "generic" as const,
   };
@@ -64,6 +64,10 @@ export function toolMetaForTarget(target: PublishTargetStatus): TargetOption {
     hasSkillsFolder: target.hasSkillsFolder,
     installedSkillNames: target.installedSkillNames,
   };
+}
+
+function targetInitial(name: string) {
+  return Array.from(name.trim())[0]?.toUpperCase() ?? "?";
 }
 
 const targetMeta: Record<

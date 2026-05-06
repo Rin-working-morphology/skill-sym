@@ -155,7 +155,17 @@
           aria-labelledby="settings-targets-title"
         >
           <div class="settings-section-head">
-            <h2 id="settings-targets-title">目标启用状态</h2>
+            <div class="settings-section-title-row">
+              <h2 id="settings-targets-title">目标启用状态</h2>
+              <button
+                type="button"
+                class="add-target-button"
+                :disabled="busy"
+                @click="customTargetFormOpen = true"
+              >
+                添加
+              </button>
+            </div>
           </div>
 
           <article class="setting-card wide">
@@ -186,6 +196,13 @@
               </button>
             </div>
           </article>
+
+          <CustomTargetForm
+            v-if="customTargetFormOpen"
+            :busy="busy"
+            @cancel="customTargetFormOpen = false"
+            @submit="submitCustomTarget"
+          />
         </section>
 
         <section
@@ -289,6 +306,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 
+import CustomTargetForm from "./CustomTargetForm.vue";
 import type {
   AppState,
   BaseFolderPreset,
@@ -320,6 +338,7 @@ const emit = defineEmits<{
   setPublishMode: [mode: PublishMode];
   setThemeMode: [mode: ThemeMode];
   togglePublishTarget: [targetId: TargetId];
+  addCustomPublishTarget: [payload: { name: string; folderName: string }];
   installLatestUpdate: [];
   openReleasePage: [];
 }>();
@@ -331,9 +350,15 @@ const tabs: { id: SettingsTab; label: string }[] = [
 ];
 
 const activeTab = ref<SettingsTab>("general");
+const customTargetFormOpen = ref(false);
 
 function updateStatusClass(status: string) {
   return status.toLowerCase();
+}
+
+function submitCustomTarget(payload: { name: string; folderName: string }) {
+  emit("addCustomPublishTarget", payload);
+  customTargetFormOpen.value = false;
 }
 </script>
 
@@ -475,6 +500,27 @@ function updateStatusClass(status: string) {
   border-bottom: 1px solid var(--line);
 }
 
+.settings-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.add-target-button {
+  min-height: 24px;
+  border-color: transparent;
+  background: var(--accent);
+  box-shadow: none;
+  color: var(--accent-text);
+  font-size: var(--type-button-compact);
+}
+
+.add-target-button:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: none;
+}
+
 .setting-card {
   display: flex;
   flex-direction: column;
@@ -596,6 +642,11 @@ function updateStatusClass(status: string) {
   font-size: var(--type-button-compact);
 }
 
+.target-toggle strong,
+.target-toggle small {
+  overflow-wrap: anywhere;
+}
+
 .tool-avatar {
   width: 26px;
   height: 26px;
@@ -633,8 +684,13 @@ function updateStatusClass(status: string) {
 }
 
 .tool-avatar span {
+  color: inherit;
   font-size: var(--type-button-compact);
   font-weight: var(--font-label);
+}
+
+.tool-avatar.generic {
+  color: var(--custom-target-icon-text);
 }
 
 .about-card {
