@@ -224,10 +224,6 @@ bun run build
 bun run tauri build
 ```
 
-Tauri 桌面包通常应在目标系统上构建：Windows 构建 Windows 安装包，macOS 构建 `.app` / `.dmg`，Linux 构建 `.AppImage` / `.deb` / `.rpm` 等。只有 Windows 电脑时，建议使用 GitHub Actions 的 Windows、macOS、Ubuntu runner 自动构建三端产物。
-
-自动更新包由 `createUpdaterArtifacts` 生成并签名。发布前需要在 GitHub 仓库中配置 `TAURI_SIGNING_PRIVATE_KEY`；如果后续更换 key，需要同步更新 `src-tauri/tauri.conf.json` 中的 updater 公钥。
-
 Linux 本地构建前需要安装 WebKitGTK 等系统依赖。Ubuntu 示例：
 
 ```bash
