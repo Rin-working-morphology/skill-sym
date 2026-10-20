@@ -273,6 +273,15 @@ function submitCustomTarget(payload: { name: string; folderName: string }) {
   color: var(--custom-target-icon-text);
 }
 
+/* 单色品牌图标以深色为底稿，暗色主题下直接反相。
+   不要依赖 SVG 内部的 prefers-color-scheme：Firefox 在 <img> 中不会求值，
+   而且它跟随的是系统主题而不是应用内的 data-theme。 */
+:root[data-theme="dark"] .tool-avatar.codex img,
+:root[data-theme="dark"] .tool-avatar.pi img,
+:root[data-theme="dark"] .tool-avatar.trae img {
+  filter: invert(1);
+}
+
 @media (max-width: 720px) {
   .settings-panel {
     padding-left: 14px;
