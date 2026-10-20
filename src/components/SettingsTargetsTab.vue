@@ -15,6 +15,9 @@
           添加
         </button>
       </div>
+      <small class="settings-hint">
+        自动检测用户目录中已安装的 coding agent；未检测到的目标不可启用。
+      </small>
     </div>
 
     <article class="setting-card wide">
@@ -24,10 +27,17 @@
           :key="target.id"
           type="button"
           class="target-toggle"
-          :class="{ active: target.enabled }"
-          :aria-pressed="target.enabled"
-          :disabled="busy"
-          :title="target.path"
+          :class="{
+            active: target.enabled && target.installed,
+            unavailable: !target.installed,
+          }"
+          :aria-pressed="target.enabled && target.installed"
+          :disabled="busy || !target.installed"
+          :title="
+            target.installed
+              ? `${target.name} · ~/${target.globalFolderName}`
+              : `${target.name} 未检测到安装目录`
+          "
           @click="emit('togglePublishTarget', target.id)"
         >
           <span class="tool-avatar" :class="target.tone">
@@ -40,10 +50,15 @@
           </span>
           <span>
             <strong>{{ target.name }}</strong>
-            <small>{{ target.folderName }}</small>
+            <small>{{
+              target.installed ? target.globalFolderName : "未检测到"
+            }}</small>
           </span>
         </button>
       </div>
+      <small v-if="installedTargetCount === 0" class="settings-hint">
+        当前未检测到任何已安装的 coding agent，你仍然可以添加自定义发布目标。
+      </small>
     </article>
 
     <CustomTargetForm
@@ -56,12 +71,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 
 import CustomTargetForm from "./CustomTargetForm.vue";
 import type { TargetId, TargetOption } from "../types/manager";
 
-defineProps<{
+const props = defineProps<{
   busy: boolean;
   targetOptions: TargetOption[];
 }>();
@@ -72,6 +87,10 @@ const emit = defineEmits<{
 }>();
 
 const customTargetFormOpen = ref(false);
+
+const installedTargetCount = computed(
+  () => props.targetOptions.filter((target) => target.installed).length,
+);
 
 function submitCustomTarget(payload: { name: string; folderName: string }) {
   emit("addCustomPublishTarget", payload);
@@ -105,6 +124,12 @@ function submitCustomTarget(payload: { name: string; folderName: string }) {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.settings-hint {
+  color: var(--text-muted);
+  font-size: var(--type-button-compact);
+  line-height: 1.4;
 }
 
 .add-target-button {
@@ -171,6 +196,19 @@ function submitCustomTarget(payload: { name: string; folderName: string }) {
   box-shadow: none;
   color: var(--text);
   font-weight: var(--font-label);
+}
+
+.target-toggle.unavailable {
+  opacity: 0.48;
+}
+
+.target-toggle.unavailable:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.target-toggle.unavailable .tool-avatar {
+  filter: grayscale(1);
 }
 
 .target-toggle > span:last-child {

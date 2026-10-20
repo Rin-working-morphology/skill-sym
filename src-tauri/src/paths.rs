@@ -44,9 +44,40 @@ pub(crate) fn validate_child_name(name: &str) -> CommandResult<()> {
     }
 }
 
+/// Validate a folder path relative to a known root (home or workspace).
+///
+/// Unlike [`validate_child_name`], nested folders such as `.config/opencode`
+/// are allowed, but absolute paths and parent-directory escapes are not.
+pub(crate) fn validate_relative_path(value: &str) -> CommandResult<()> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return Err("目录必须是相对路径。".to_string());
+    }
+
+    let path = Path::new(trimmed);
+    if path.is_absolute() || path.has_root() {
+        return Err("目录必须是相对路径。".to_string());
+    }
+
+    let mut has_normal_component = false;
+    for component in path.components() {
+        match component {
+            Component::Normal(_) => has_normal_component = true,
+            Component::CurDir => {}
+            _ => return Err("目录必须是相对路径。".to_string()),
+        }
+    }
+
+    if !has_normal_component {
+        return Err("目录必须是相对路径。".to_string());
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::validate_child_name;
+    use super::{validate_child_name, validate_relative_path};
 
     #[test]
     fn validate_child_name_rejects_path_like_values() {
@@ -55,5 +86,17 @@ mod tests {
         assert!(validate_child_name("nested/skill").is_err());
         assert!(validate_child_name(r"nested\skill").is_err());
         assert!(validate_child_name("   ").is_err());
+    }
+
+    #[test]
+    fn validate_relative_path_allows_nested_folders_but_rejects_escapes() {
+        assert!(validate_relative_path(".agents").is_ok());
+        assert!(validate_relative_path(".config/opencode").is_ok());
+        assert!(validate_relative_path(".pi/agent").is_ok());
+        assert!(validate_relative_path("../outside").is_err());
+        assert!(validate_relative_path("nested/../outside").is_err());
+        assert!(validate_relative_path("/etc/skills").is_err());
+        assert!(validate_relative_path("").is_err());
+        assert!(validate_relative_path("   ").is_err());
     }
 }

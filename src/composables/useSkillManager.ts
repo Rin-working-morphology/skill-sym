@@ -176,7 +176,9 @@ export function useSkillManager() {
   );
 
   const targetOptions = computed(() =>
-    allTargetOptions.value.filter((target) => target.enabled),
+    allTargetOptions.value.filter(
+      (target) => target.enabled && target.installed,
+    ),
   );
 
   const selectedSkill = computed(() => {

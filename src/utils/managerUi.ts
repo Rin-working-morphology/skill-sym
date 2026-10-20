@@ -55,9 +55,12 @@ export function toolMetaForTarget(target: PublishTargetStatus): TargetOption {
     skillsPath: target.skillsPath,
     name: target.name,
     folderName: target.folderName,
+    globalFolderName: target.globalFolderName,
+    projectFolderName: target.projectFolderName,
     shortLabel: meta.shortLabel,
     iconSrc: meta.iconSrc,
     tone: meta.tone,
+    installed: target.installed,
     enabled: target.enabled,
     isSource: target.isSource,
     protectsSourceChildren: target.protectsSourceChildren,
@@ -103,5 +106,20 @@ const targetMeta: Record<
     shortLabel: "CB",
     iconSrc: "/codebuddy.svg",
     tone: "codebuddy",
+  },
+  opencode: {
+    shortLabel: "OC",
+    iconSrc: "/opencode.png",
+    tone: "opencode",
+  },
+  pi: {
+    shortLabel: "PI",
+    iconSrc: "/pi.svg",
+    tone: "pi",
+  },
+  deepseek: {
+    shortLabel: "DS",
+    iconSrc: "/deepseek.svg",
+    tone: "deepseek",
   },
 };

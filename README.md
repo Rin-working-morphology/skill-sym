@@ -1,24 +1,41 @@
 # SkillSym
 
-一个用于管理和发布 AI Coding Skills 的本地桌面工具。SkillSym 可以扫描全局目录或项目工作区内的 `skills` 内容，并将它们发布到 Claude、Codex、Gemini、Qoder、Trae、CodeBuddy 等工具约定的本地目录中。
+一个用于管理和发布 AI Coding Skills 的本地桌面工具。SkillSym 可以扫描全局目录或项目工作区内的 `skills` 内容，并将它们发布到 Claude、Codex、Gemini、OpenCode、Qoder、Trae、CodeBuddy、Pi、DeepSeek 等工具约定的本地目录中。
 
 项目基于 **Tauri 2 + Vue 3 + TypeScript** 构建，前端负责管理界面，Rust 后端负责文件系统扫描、复制、符号链接、清理和本地状态持久化。
 
 ## 功能特性
 
-- 管理全局技能目录，默认指向用户主目录下的 `.claude/skills`
+- 默认使用更通用的 Agent Skills 目录 `~/.agents/skills`
+- 自动探测用户主目录下已安装的 coding agent，只为已检测到的 agent 渲染发布目标
 - 添加多个项目工作区，并为每个工作区配置独立的技能基础目录
 - 扫描技能条目，支持识别文件、文件夹、符号链接和其他类型
 - 将单个技能或整个 `skills` 目录发布到多个目标工具
 - 支持两种发布方式：
   - **相对链接**：创建相对符号链接，适合本机复用和保持源内容同步
   - **物理复制**：复制文件或文件夹，适合需要独立副本的场景
-- 支持启用或关闭发布目标：Claude、Codex、Gemini、Qoder、Trae、CodeBuddy
+- 支持启用或关闭发布目标：Claude、Codex、Gemini、OpenCode、Qoder、Trae、CodeBuddy、Pi、DeepSeek
 - 删除源技能时同步清理已发布到目标目录中的同名技能
 - 支持浅色/深色主题
 - 提供工作区快捷打开、工作区移除、基础目录切换等桌面操作
 
-## 目录约定
+## Agent 探测与目录约定
+
+应用会检查用户主目录中的 agent 配置目录。只有检测到安装的 agent 才会出现在管理页的目标图标中；设置页会保留全部已知 agent，并把未检测到的项标记为“未检测到”。
+
+| 工具      | 探测目录（用户主目录）         | 全局技能目录                              | 工作区技能目录     |
+| --------- | ------------------------------ | ----------------------------------------- | ------------------ |
+| Claude    | `.claude`                      | `~/.claude/skills`                        | `.claude/skills`   |
+| Codex     | `.codex`                       | `~/.agents/skills`                        | `.agents/skills`   |
+| Gemini    | `.gemini`                      | `~/.gemini/skills`                        | `.gemini/skills`   |
+| OpenCode  | `.config/opencode`、`.opencode` | `~/.config/opencode/skills`               | `.opencode/skills` |
+| Qoder     | `.qoder`                       | `~/.qoder/skills`                         | `.qoder/skills`    |
+| Trae      | `.trae`、`.trae-cn`            | `~/.trae/skills` 或 `~/.trae-cn/skills`   | `.trae/skills`     |
+| CodeBuddy | `.codebuddy`                   | `~/.codebuddy/skills`                     | `.codebuddy/skills`|
+| Pi        | `.pi`                          | `~/.pi/agent/skills`                      | `.pi/skills`       |
+| DeepSeek  | `.dsh`                         | `~/.dsh/skills`                           | `.dsh/skills`      |
+
+> 说明：Codex 新版使用共享的 `.agents/skills` 目录；Gemini、OpenCode、Pi 和 DeepSeek 同时兼容 `~/.agents/skills` 与 `.agents/skills`。因此把默认来源设为 `~/.agents/skills` 可以被多个 agent 直接复用。用户也可以随时在设置页把全局根目录切换为任意 agent 目录。
 
 SkillSym 以“基础目录 + `skills` 子目录”的形式读取技能。路径由系统原生路径 API 处理，Windows、macOS、Linux 均可使用。
 
@@ -26,33 +43,15 @@ SkillSym 以“基础目录 + `skills` 子目录”的形式读取技能。路�
 
 ```text
 # Windows
-C:\Users\Rin\.claude\skills
-D:\ProjectA\.codex\skills
+C:\Users\Rin\.agents\skills
+D:\ProjectA\.opencode\skills
 
 # macOS / Linux
-/Users/rin/.claude/skills
-/home/rin/.claude/skills
-/home/rin/ProjectA/.codex/skills
+/Users/rin/.agents/skills
+/home/rin/ProjectA/.opencode/skills
 ```
 
-默认支持的目标工具目录如下：
-
-| 工具      | 基础目录名   | 技能目录            |
-| --------- | ------------ | ------------------- |
-| Claude    | `.claude`    | `.claude/skills`    |
-| Codex     | `.codex`     | `.codex/skills`     |
-| Gemini    | `.gemini`    | `.gemini/skills`    |
-| Qoder     | `.qoder`     | `.qoder/skills`     |
-| Trae      | `.trae`      | `.trae/skills`      |
-| CodeBuddy | `.codebuddy` | `.codebuddy/skills` |
-
-全局范围下，目标目录位于用户主目录下。工作区范围下，目标目录位于对应工作区根目录下。
-
-| 系统    | 全局 Claude 技能目录示例       |
-| ------- | ------------------------------ |
-| Windows | `%USERPROFILE%\.claude\skills` |
-| macOS   | `~/.claude/skills`             |
-| Linux   | `~/.claude/skills`             |
+全局范围下，目标目录位于用户主目录下。工作区范围下，目标目录位于对应工作区根目录下。自定义发布目标仍然使用“基础目录 + `skills`”的约定。
 
 ## 使用方式
 
@@ -62,23 +61,25 @@ D:\ProjectA\.codex\skills
 
 ```text
 # Windows
-%USERPROFILE%\.claude
+%USERPROFILE%\.agents
 
 # macOS / Linux
-~/.claude
+~/.agents
 ```
 
 应用会读取其中的：
 
 ```text
 # Windows
-%USERPROFILE%\.claude\skills
+%USERPROFILE%\.agents\skills
 
 # macOS / Linux
-~/.claude/skills
+~/.agents/skills
 ```
 
 如果目录不存在，应用会在初始化时创建全局 `skills` 目录。
+
+设置页的快捷目录按钮会根据本机检测到的 agent 动态生成，例如 `.claude`、`.config/opencode`、`.pi/agent`、`.dsh`，并始终保留 `.agents`。
 
 ### 工作区技能
 
@@ -86,13 +87,13 @@ D:\ProjectA\.codex\skills
 
 ```text
 # Windows
-<workspace>\.claude\skills
+<workspace>\.agents\skills
 
 # macOS / Linux
-<workspace>/.claude/skills
+<workspace>/.agents/skills
 ```
 
-作为该工作区的技能来源。你也可以通过工作区旁的编辑按钮，改成 `.codex`、`.qoder`、`.trae`、`.codebuddy` 或任意已有目录。
+作为该工作区的技能来源。你也可以通过工作区旁的编辑按钮，改成 `.claude`、`.opencode`、`.qoder`、`.trae`、`.codebuddy`、`.pi`、`.dsh` 或任意已有目录。
 
 ### 发布技能
 
@@ -100,8 +101,9 @@ D:\ProjectA\.codex\skills
 
 - `skills` 根目录行用于发布或移除整个 `skills` 文件夹
 - 单个技能行用于发布或移除对应技能
-- Claude、Codex、Gemini、Qoder、Trae、CodeBuddy 图标表示目标工具
+- Claude、Codex、Gemini、OpenCode、Qoder、Trae、CodeBuddy、Pi、DeepSeek 图标表示目标工具
 - 图标上出现状态点表示该技能或目录已经发布到对应目标
+- 只有已启用且本机已检测到的 agent 才会显示图标
 
 发布前可以在顶部切换发布方式：
 
@@ -115,7 +117,7 @@ D:\ProjectA\.codex\skills
 设置页包含三类配置：
 
 - **通用**：配置全局根目录、默认发布方式、界面主题
-- **发布目标**：启用或停用 Claude、Codex、Gemini、Qoder、Trae、CodeBuddy
+- **发布目标**：查看本机检测状态并启用/停用 agent，也可以添加自定义发布目标
 - **关于**：查看应用名称、版本、更新状态和一键更新入口
 
 更新流程使用 Tauri 2 updater，从 GitHub Releases 的 `latest.json` 检查签名更新包，并在应用内完成下载、安装和重启。
@@ -134,9 +136,23 @@ skillsym-state.json
 - 已添加的工作区
 - 每个工作区的技能基础目录
 - 已启用的发布目标
+- 自定义发布目标
 - 默认发布方式
 
 主题设置保存在浏览器侧 `localStorage` 中。
+
+## 参考文档
+
+- [Claude Code skills](https://code.claude.com/docs/en/skills)
+- [Codex skills](https://developers.openai.com/codex/skills)
+- [Gemini CLI agent skills](https://geminicli.com/docs/cli/using-agent-skills/)
+- [OpenCode agent skills](https://opencode.ai/docs/en/skills/)
+- [CodeBuddy Code skills](https://www.codebuddy.cn/docs/cli/skills)
+- [Qoder CLI skills](https://docs.qoder.com/cli/Skills)
+- [Trae skills](https://docs.trae.ai/ide/skills)
+- [Pi skills](https://pi.dev/docs/latest/skills)
+- [Agent Skills 规范](https://agentskills.io)
+- [Vercel skills：各 agent 目录对照表](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)
 
 ## 技术栈
 
@@ -170,7 +186,7 @@ skillsym-state.json
 │     ├─ commands/         # Tauri 命令入口
 │     ├─ filesystem/       # 扫描、发布、复制、链接、删除逻辑
 │     ├─ models/           # Rust 数据结构
-│     ├─ state/            # 状态读取、迁移和保存
+│     ├─ state/            # agent 探测、目标定义、状态读取和迁移
 │     └─ paths.rs          # 路径校验和工具函数
 ├─ DESIGN.md               # 设计系统说明
 ├─ PRODUCT.md              # 产品和视觉方向

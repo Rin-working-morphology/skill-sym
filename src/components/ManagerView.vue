@@ -16,6 +16,9 @@
         <div class="panel-title">
           <h2>技能列表</h2>
           <small>{{ scan?.skills.length ?? 0 }} 项技能</small>
+          <small v-if="targetOptions.length === 0" class="target-empty-note">
+            未检测到已安装的 coding agent
+          </small>
         </div>
         <div class="panel-tools">
           <span class="command-label">发布方式</span>
@@ -366,6 +369,13 @@ function baseFolderText() {
 
 .panel-title {
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.target-empty-note {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: var(--font-body);
 }
 
 .panel-tools {

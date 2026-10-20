@@ -19,10 +19,14 @@ use crate::{
         RemoveSkillRequest, ScanResult, ScopeSelection, TargetScanResult, Workspace,
         WorkspaceGitDetail,
     },
-    paths::{absolute_path, ensure_existing_dir, path_to_string, validate_child_name},
+    paths::{
+        absolute_path, ensure_existing_dir, path_to_string, validate_child_name,
+        validate_relative_path,
+    },
     state::{
-        configured_publish_targets, global_base_child, load_and_prepare_state, load_state,
-        normalize_enabled_targets, save_state, workspace_id, DEFAULT_BASE_FOLDER_NAME,
+        app_home_dir, global_base_child, load_and_prepare_state, load_state,
+        normalize_enabled_targets, publish_target_definitions, save_state, workspace_id,
+        DEFAULT_BASE_FOLDER_NAME,
     },
 };
 
@@ -132,7 +136,8 @@ pub(crate) fn set_scope_base_child(
     scope: ScopeSelection,
     folder_name: String,
 ) -> CommandResult<AppState> {
-    validate_child_name(&folder_name)?;
+    validate_relative_path(&folder_name)
+        .map_err(|_| "基础目录必须是用户目录或工作区内的相对路径。".to_string())?;
     let mut state = load_state(&app)?;
     match scope.kind.as_str() {
         "global" => {
@@ -199,17 +204,22 @@ pub(crate) fn add_custom_publish_target(
         .map_err(|_| "存放位置必须是单个文件夹名称。".to_string())?;
 
     let mut state = load_state(&app)?;
-    let existing_targets = configured_publish_targets(&state);
+    let home = app_home_dir(&app)?;
+    let existing_targets = publish_target_definitions(&state, &home);
     if existing_targets
         .iter()
         .any(|target| target.name.eq_ignore_ascii_case(target_name))
     {
         return Err("已存在同名发布目标。".to_string());
     }
-    if existing_targets
-        .iter()
-        .any(|target| target.folder_name.eq_ignore_ascii_case(target_folder_name))
-    {
+    if existing_targets.iter().any(|target| {
+        target
+            .project_folder
+            .eq_ignore_ascii_case(target_folder_name)
+            || target
+                .global_folder
+                .eq_ignore_ascii_case(target_folder_name)
+    }) {
         return Err("已存在相同存放位置的发布目标。".to_string());
     }
 
@@ -220,7 +230,7 @@ pub(crate) fn add_custom_publish_target(
         folder_name: target_folder_name.to_string(),
     });
     state.enabled_target_ids.push(id);
-    normalize_enabled_targets(&mut state);
+    normalize_enabled_targets(&mut state, &home);
     save_state(&app, &state)?;
     Ok(state)
 }
@@ -242,7 +252,8 @@ pub(crate) fn set_enabled_publish_targets(
     target_ids: Vec<String>,
 ) -> CommandResult<AppState> {
     let mut state = load_state(&app)?;
-    let supported_targets = configured_publish_targets(&state);
+    let home = app_home_dir(&app)?;
+    let supported_targets = publish_target_definitions(&state, &home);
     if target_ids
         .iter()
         .any(|id| !supported_targets.iter().any(|target| &target.id == id))
@@ -251,7 +262,7 @@ pub(crate) fn set_enabled_publish_targets(
     }
 
     state.enabled_target_ids = target_ids;
-    normalize_enabled_targets(&mut state);
+    normalize_enabled_targets(&mut state, &home);
     save_state(&app, &state)?;
     Ok(state)
 }

@@ -40,6 +40,7 @@
           :state="state"
           :publish-mode="publishMode"
           :theme-mode="themeMode"
+          :target-options="targetOptions"
           @set-quick-base="emit('setQuickBase', $event)"
           @choose-global-base-folder="emit('chooseGlobalBaseFolder')"
           @set-publish-mode="emit('setPublishMode', $event)"

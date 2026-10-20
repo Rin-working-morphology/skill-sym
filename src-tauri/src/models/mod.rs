@@ -29,6 +29,10 @@ pub(crate) struct AppState {
     pub(crate) custom_publish_targets: Vec<CustomPublishTarget>,
     #[serde(default = "crate::state::default_enabled_target_ids")]
     pub(crate) enabled_target_ids: Vec<String>,
+    /// Agents already observed on this machine. Used so a newly installed
+    /// agent is enabled once, while an agent the user disabled stays disabled.
+    #[serde(default)]
+    pub(crate) known_detected_target_ids: Vec<String>,
     #[serde(default = "crate::state::default_publish_mode")]
     pub(crate) default_publish_mode: PublishMode,
 }
@@ -68,9 +72,15 @@ pub(crate) struct WorkspaceGitDetail {
 pub(crate) struct PublishTargetStatus {
     pub(crate) id: String,
     pub(crate) name: String,
+    /// Folder used in the currently scanned scope.
     pub(crate) folder_name: String,
+    /// Folder used when the scope is global (relative to the user's home).
+    pub(crate) global_folder_name: String,
+    /// Folder used when the scope is a workspace.
+    pub(crate) project_folder_name: String,
     pub(crate) base_folder: String,
     pub(crate) skills_path: String,
+    pub(crate) installed: bool,
     pub(crate) enabled: bool,
     pub(crate) is_source: bool,
     pub(crate) protects_source_children: bool,

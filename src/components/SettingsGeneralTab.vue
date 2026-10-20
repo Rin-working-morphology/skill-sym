@@ -19,6 +19,7 @@
           :key="preset"
           type="button"
           :disabled="busy"
+          :title="`切换全局根目录到 ~/${preset}`"
           @click="emit('setQuickBase', preset)"
         >
           {{ preset }}
@@ -86,18 +87,22 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type {
   AppState,
   BaseFolderPreset,
   PublishMode,
+  TargetOption,
   ThemeMode,
 } from "../types/manager";
 
-defineProps<{
+const props = defineProps<{
   busy: boolean;
   state: AppState | null;
   publishMode: PublishMode;
   themeMode: ThemeMode;
+  targetOptions: TargetOption[];
 }>();
 
 const emit = defineEmits<{
@@ -107,13 +112,22 @@ const emit = defineEmits<{
   setThemeMode: [mode: ThemeMode];
 }>();
 
-const baseFolderPresets: BaseFolderPreset[] = [
-  ".claude",
-  ".codex",
-  ".qoder",
-  ".trae",
-  ".codebuddy",
-];
+const baseFolderPresets = computed(() => {
+  const presets = new Set<string>([".agents"]);
+
+  for (const target of props.targetOptions) {
+    if (!target.installed) {
+      continue;
+    }
+
+    const folder = target.globalFolderName.trim();
+    if (folder) {
+      presets.add(folder);
+    }
+  }
+
+  return [...presets];
+});
 </script>
 
 <style scoped>

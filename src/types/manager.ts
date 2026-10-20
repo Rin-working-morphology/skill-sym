@@ -3,19 +3,17 @@ export type PublishMode = "symlink" | "copy";
 export type ViewMode = "manager" | "settings";
 export type ThemeMode = "light" | "dark";
 export type TargetId = string;
-export type BaseFolderPreset =
-  | ".claude"
-  | ".codex"
-  | ".qoder"
-  | ".trae"
-  | ".codebuddy";
+export type BaseFolderPreset = string;
 export type ToolTone =
   | "claude"
   | "codex"
-  | "qoder"
   | "gemini"
+  | "opencode"
+  | "qoder"
   | "trae"
   | "codebuddy"
+  | "pi"
+  | "deepseek"
   | "generic";
 
 export interface Workspace {
@@ -61,8 +59,11 @@ export interface PublishTargetStatus {
   id: TargetId;
   name: string;
   folderName: string;
+  globalFolderName: string;
+  projectFolderName: string;
   baseFolder: string;
   skillsPath: string;
+  installed: boolean;
   enabled: boolean;
   isSource: boolean;
   protectsSourceChildren: boolean;
@@ -129,9 +130,12 @@ export interface TargetOption {
   skillsPath: string;
   name: string;
   folderName: string;
+  globalFolderName: string;
+  projectFolderName: string;
   shortLabel: string;
   iconSrc: string | null;
   tone: ToolTone;
+  installed: boolean;
   enabled: boolean;
   isSource: boolean;
   protectsSourceChildren: boolean;

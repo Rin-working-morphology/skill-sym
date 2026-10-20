@@ -12,7 +12,10 @@ use crate::{
         RemoveSkillRequest, ScanResult, ScopeSelection, SkillEntry, TargetScanResult,
     },
     paths::{absolute_path, path_to_string, readable_io_error, validate_child_name},
-    state::{configured_publish_targets, scope_skills_path, target_root_path, SKILLS_FOLDER_NAME},
+    state::{
+        app_home_dir, publish_target_definitions, scope_skills_path, target_base_folder,
+        target_root_path, SKILLS_FOLDER_NAME,
+    },
 };
 
 pub(crate) fn scan_scope_skills(
@@ -71,11 +74,12 @@ pub(crate) fn scan_scope_publish_targets(
     scope: &ScopeSelection,
 ) -> CommandResult<TargetScanResult> {
     let root = target_root_path(app, state, scope)?;
+    let home = app_home_dir(app)?;
     let source_skills = absolute_path(&scope_skills_path(state, scope)?)?;
     let mut targets = Vec::new();
 
-    for supported in configured_publish_targets(state) {
-        let base_folder = root.join(&supported.folder_name);
+    for supported in publish_target_definitions(state, &home) {
+        let base_folder = target_base_folder(&supported, &root, &scope.kind);
         let skills_path = base_folder.join(SKILLS_FOLDER_NAME);
         let installed_skill_names = installed_skill_names(&skills_path)?;
         let has_skills_folder = fs::symlink_metadata(&skills_path).is_ok();
@@ -87,13 +91,21 @@ pub(crate) fn scan_scope_publish_targets(
             .enabled_target_ids
             .iter()
             .any(|id| id == &supported.id);
+        let folder_name = if scope.kind == "global" {
+            &supported.global_folder
+        } else {
+            &supported.project_folder
+        };
 
         targets.push(PublishTargetStatus {
             id: supported.id,
             name: supported.name,
-            folder_name: supported.folder_name,
+            folder_name: folder_name.clone(),
+            global_folder_name: supported.global_folder,
+            project_folder_name: supported.project_folder,
             base_folder: path_to_string(&base_folder),
             skills_path: path_to_string(&skills_path),
+            installed: supported.installed,
             enabled,
             is_source,
             protects_source_children,
@@ -372,9 +384,10 @@ fn publish_target_base_paths(
     scope: &ScopeSelection,
 ) -> CommandResult<Vec<PathBuf>> {
     let root = target_root_path(app, state, scope)?;
-    let mut paths: Vec<PathBuf> = configured_publish_targets(state)
+    let home = app_home_dir(app)?;
+    let mut paths: Vec<PathBuf> = publish_target_definitions(state, &home)
         .into_iter()
-        .map(|target| root.join(target.folder_name))
+        .map(|target| target_base_folder(&target, &root, &scope.kind))
         .chain(state.target_base_folders.iter().map(PathBuf::from))
         .collect();
     paths.sort_by_key(|path| path_to_string(path).to_lowercase());
@@ -545,6 +558,7 @@ mod tests {
             target_base_folders: Vec::new(),
             custom_publish_targets: Vec::new(),
             enabled_target_ids: default_enabled_target_ids(),
+            known_detected_target_ids: Vec::new(),
             default_publish_mode: default_publish_mode(),
         }
     }
