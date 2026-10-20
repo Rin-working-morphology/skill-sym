@@ -37,14 +37,14 @@ D:\ProjectA\.codex\skills
 
 默认支持的目标工具目录如下：
 
-| 工具      | 基础目录名   | 技能目录              |
-| --------- | ------------ | --------------------- |
-| Claude    | `.claude`    | `.claude/skills`      |
-| Codex     | `.codex`     | `.codex/skills`       |
-| Gemini    | `.gemini`    | `.gemini/skills`      |
-| Qoder     | `.qoder`     | `.qoder/skills`       |
-| Trae      | `.trae`      | `.trae/skills`        |
-| CodeBuddy | `.codebuddy` | `.codebuddy/skills`   |
+| 工具      | 基础目录名   | 技能目录            |
+| --------- | ------------ | ------------------- |
+| Claude    | `.claude`    | `.claude/skills`    |
+| Codex     | `.codex`     | `.codex/skills`     |
+| Gemini    | `.gemini`    | `.gemini/skills`    |
+| Qoder     | `.qoder`     | `.qoder/skills`     |
+| Trae      | `.trae`      | `.trae/skills`      |
+| CodeBuddy | `.codebuddy` | `.codebuddy/skills` |
 
 全局范围下，目标目录位于用户主目录下。工作区范围下，目标目录位于对应工作区根目录下。
 
@@ -190,15 +190,7 @@ skillsym-state.json
 
 安装依赖：
 
-```powershell
-# Windows PowerShell
-bun install
-```
-
-或：
-
 ```bash
-# macOS / Linux shell
 bun install
 ```
 
@@ -226,11 +218,11 @@ bun run build
 bun run tauri build
 ```
 
-Linux 本地构建前需要安装 WebKitGTK 等系统依赖。Ubuntu 示例：
+Linux 本地构建前需要安装 WebKitGTK 等系统依赖。Arch Linux 示例：
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+sudo pacman -Syu
+sudo pacman -S --needed webkit2gtk-4.1 libappindicator-gtk3 librsvg patchelf
 ```
 
 macOS 本地构建前需要安装 Xcode Command Line Tools：
