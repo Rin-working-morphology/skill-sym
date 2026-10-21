@@ -657,7 +657,7 @@ function baseFolderText() {
   padding: 1px 5px;
   border-radius: 999px;
   background: color-mix(in oklch, var(--line) 44%, transparent);
-  color: var(--text-muted);
+  color: var(--accent);
   font-size: 0.66rem;
   font-weight: var(--font-label);
   vertical-align: middle;
