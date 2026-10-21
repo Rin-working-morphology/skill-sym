@@ -59,3 +59,46 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  # 在 Arch Linux 容器中构建 AppImage：链接滚动版本的 webkit2gtk，
+  # 供 Arch 系发行版使用；产物重命名为 *_archlinux_amd64.AppImage，
+  # 避免与 ubuntu-22.04 构建的 AppImage 同名冲突。
+  publish-tauri-arch:
+    needs: publish-tauri
+    runs-on: ubuntu-22.04
+    container:
+      image: archlinux:base-devel
+      env:
+        # 容器内无 FUSE，让 linuxdeploy 以解压模式运行
+        APPIMAGE_EXTRACT_AND_RUN: "1"
+
+    steps:
+      - name: Install Arch Linux dependencies
+        run: |
+          pacman -Syu --noconfirm git github-cli rust bun jq webkit2gtk-4.1 librsvg patchelf
+
+      - uses: actions/checkout@v4
+
+      - name: Install frontend dependencies
+        run: bun install
+
+      - name: Build AppImage
+        run: bun run tauri build --bundles appimage
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Upload AppImage
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="$(jq -r .version src-tauri/tauri.conf.json)"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+          else
+            # 与 tauri-action 的 tagName 占位符保持一致
+            TAG="app-v$VERSION"
+          fi
+          cd src-tauri/target/release/bundle/appimage
+          mv SkillSym_*_amd64.AppImage "SkillSym_${VERSION}_archlinux_amd64.AppImage"
+          gh release upload "$TAG" "SkillSym_${VERSION}_archlinux_amd64.AppImage" --clobber
