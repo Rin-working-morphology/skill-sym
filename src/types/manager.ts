@@ -75,6 +75,19 @@ export interface TargetScanResult {
   targets: PublishTargetStatus[];
 }
 
+export interface SkillDiffEntry {
+  skillName: string;
+  /** SKILL.md（单文件技能则为整个文件）内容在多份副本间不一致。 */
+  contentDiffers: boolean;
+  /** 副本之间的文件树结构（相对路径集合）不一致。 */
+  treeDiffers: boolean;
+  copyCount: number;
+}
+
+export interface SkillDiffResult {
+  entries: SkillDiffEntry[];
+}
+
 export interface OperationResult {
   message: string;
   source: string;

@@ -16,6 +16,8 @@ const STATE_FILE_NAME: &str = "skillsym-state.json";
 /// The shared Agent Skills directory used by most modern coding agents.
 pub(crate) const DEFAULT_BASE_FOLDER_NAME: &str = ".agents";
 pub(crate) const SKILLS_FOLDER_NAME: &str = "skills";
+/// The manifest file that defines a directory skill.
+pub(crate) const SKILL_MAIN_FILE: &str = "SKILL.md";
 
 pub(crate) struct SupportedTarget {
     pub(crate) id: &'static str,

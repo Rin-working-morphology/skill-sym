@@ -120,7 +120,15 @@
                 @click="emit('selectSkill', skill.name)"
               >
                 <div class="skill-main">
-                  <span class="skill-name">{{ skill.name }}</span>
+                  <span class="skill-name">
+                    {{ skill.name }}
+                    <span
+                      v-if="publishMode === 'copy' && skillDiffEntry(skill.name)"
+                      class="skill-diff-hint"
+                      :title="skillDiffTitle(skillDiffEntry(skill.name)!)"
+                      >有差异</span
+                    >
+                  </span>
                 </div>
               </span>
 
@@ -181,11 +189,14 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
+
 import type {
   BaseFolderPreset,
   PublishMode,
   ScanResult,
   ScopeOption,
+  SkillDiffEntry,
   SkillEntry,
   TargetOption,
 } from "../types/manager";
@@ -198,9 +209,32 @@ const props = defineProps<{
   targetOptions: TargetOption[];
   selectedSkill?: SkillEntry;
   publishMode: PublishMode;
+  skillDiffEntries: SkillDiffEntry[];
   isSkillPublished: (skillName: string, target: TargetOption) => boolean;
   isFolderPublished: (target: TargetOption) => boolean;
 }>();
+
+const skillDiffMap = computed(() => {
+  const map = new Map<string, SkillDiffEntry>();
+  for (const entry of props.skillDiffEntries) {
+    map.set(entry.skillName, entry);
+  }
+  return map;
+});
+
+function skillDiffEntry(skillName: string) {
+  return skillDiffMap.value.get(skillName);
+}
+
+function skillDiffTitle(entry: SkillDiffEntry) {
+  if (entry.contentDiffers && entry.treeDiffers) {
+    return `该技能在 ${entry.copyCount} 个位置的物理副本中 SKILL.md 内容与文件树均有差异`;
+  }
+  if (entry.contentDiffers) {
+    return `该技能在 ${entry.copyCount} 个位置的物理副本中 SKILL.md 内容有差异`;
+  }
+  return `该技能在 ${entry.copyCount} 个位置的物理副本中文件树结构有差异`;
+}
 
 const emit = defineEmits<{
   setPublishMode: [mode: PublishMode];
@@ -615,6 +649,18 @@ function baseFolderText() {
 .skill-main .skill-name {
   font-size: 0.9rem;
   transition: color var(--motion-base) var(--ease-out-quint);
+}
+
+/* 复制副本间的差异提示：低调的文字徽标，只提示不引导操作。 */
+.skill-diff-hint {
+  margin-left: 4px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--line) 44%, transparent);
+  color: var(--text-muted);
+  font-size: 0.66rem;
+  font-weight: var(--font-label);
+  vertical-align: middle;
 }
 
 .kind-pill {

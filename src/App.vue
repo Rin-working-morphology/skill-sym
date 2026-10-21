@@ -25,6 +25,7 @@
           :target-options="targetOptions"
           :selected-skill="selectedSkill"
           :publish-mode="publishMode"
+          :skill-diff-entries="skillDiffEntries"
           :is-skill-published="isSkillPublished"
           :is-folder-published="isFolderPublished"
           @set-publish-mode="setDefaultPublishMode"
@@ -101,6 +102,7 @@ const {
   targetOptions,
   selectedSkill,
   publishMode,
+  skillDiffEntries,
   initialize,
   addWorkspace,
   removeWorkspaceOption,

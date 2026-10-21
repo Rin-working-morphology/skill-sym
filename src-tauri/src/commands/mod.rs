@@ -11,13 +11,13 @@ use crate::{
     filesystem::{
         delete_scope_skill, publish_scope_folder, publish_scope_skill,
         remove_published_scope_folder, remove_published_scope_skill, scan_scope_publish_targets,
-        scan_scope_skills,
+        scan_scope_skill_differences, scan_scope_skills,
     },
     models::{
         AppState, CommandResult, CustomPublishTarget, DeleteSkillRequest, OperationResult,
         PublishFolderRequest, PublishMode, PublishSkillRequest, RemoveFolderRequest,
-        RemoveSkillRequest, ScanResult, ScopeSelection, TargetScanResult, Workspace,
-        WorkspaceGitDetail,
+        RemoveSkillRequest, ScanResult, ScopeSelection, SkillDiffResult, TargetScanResult,
+        Workspace, WorkspaceGitDetail,
     },
     paths::{
         absolute_path, ensure_existing_dir, path_to_string, validate_child_name,
@@ -280,6 +280,15 @@ pub(crate) fn scan_publish_targets(
 ) -> CommandResult<TargetScanResult> {
     let state = load_state(&app)?;
     scan_scope_publish_targets(&app, &state, &scope)
+}
+
+#[tauri::command]
+pub(crate) fn scan_skill_differences(
+    app: AppHandle,
+    scope: ScopeSelection,
+) -> CommandResult<SkillDiffResult> {
+    let state = load_state(&app)?;
+    scan_scope_skill_differences(&app, &state, &scope)
 }
 
 #[tauri::command]

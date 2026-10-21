@@ -22,6 +22,8 @@ import type {
   ScanResult,
   ScopeOption,
   ScopeSelection,
+  SkillDiffEntry,
+  SkillDiffResult,
   TargetId,
   TargetOption,
   ThemeMode,
@@ -116,6 +118,7 @@ export function useSkillManager() {
   const state = ref<AppState | null>(null);
   const scan = ref<ScanResult | null>(null);
   const targetScan = ref<TargetScanResult | null>(null);
+  const skillDiffEntries = ref<SkillDiffEntry[]>([]);
   const updateStatus = ref<UpdateStatus | null>(null);
   const workspaceGitDetails = ref<Record<string, string>>({});
   const appName = ref("SkillSym");
@@ -299,8 +302,27 @@ export function useSkillManager() {
     });
   }
 
+  // 复制方式下各 agent 目录持有独立副本，只读扫描它们之间的差异，
+  // 结果仅用于在界面上低调提示，保留或保留哪一份由用户决定。
+  async function refreshSkillDifferences() {
+    if (
+      !activeScope.value ||
+      publishMode.value !== "copy" ||
+      !(scan.value?.exists ?? false)
+    ) {
+      skillDiffEntries.value = [];
+      return;
+    }
+
+    const result = await command<SkillDiffResult>("scan_skill_differences", {
+      scope: activeScope.value.scope,
+    });
+    skillDiffEntries.value = result.entries;
+  }
+
   async function refreshScopeData() {
     await Promise.all([refreshSkills(), refreshPublishTargets()]);
+    await refreshSkillDifferences();
   }
 
   async function refreshUpdateStatus() {
@@ -536,6 +558,8 @@ export function useSkillManager() {
         state.value = await command<AppState>("set_default_publish_mode", {
           mode,
         });
+        // 差异提示只在复制方式下展示，切换时同步刷新。
+        await refreshSkillDifferences();
       },
       `默认方式已切换为${publishModeLabel(mode)}`,
     );
@@ -721,6 +745,7 @@ export function useSkillManager() {
     state,
     scan,
     targetScan,
+    skillDiffEntries,
     updateStatus,
     appName,
     appVersion,

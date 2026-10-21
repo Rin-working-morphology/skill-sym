@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     fs,
     path::{Path, PathBuf},
 };
@@ -9,12 +10,13 @@ use crate::{
     models::{
         AppState, CommandResult, DeleteSkillRequest, OperationResult, PublishFolderRequest,
         PublishMode, PublishSkillRequest, PublishTargetStatus, RemoveFolderRequest,
-        RemoveSkillRequest, ScanResult, ScopeSelection, SkillEntry, TargetScanResult,
+        RemoveSkillRequest, ScanResult, ScopeSelection, SkillDiffEntry, SkillDiffResult,
+        SkillEntry, TargetScanResult,
     },
     paths::{absolute_path, path_to_string, readable_io_error, validate_child_name},
     state::{
         app_home_dir, publish_target_definitions, scope_skills_path, target_base_folder,
-        target_root_path, SKILLS_FOLDER_NAME,
+        target_root_path, SKILL_MAIN_FILE, SKILLS_FOLDER_NAME,
     },
 };
 
@@ -115,6 +117,156 @@ pub(crate) fn scan_scope_publish_targets(
     }
 
     Ok(TargetScanResult { targets })
+}
+
+/// 比对当前范围与各发布目标之间同名技能的物理副本差异。
+///
+/// 只统计物理副本：符号链接副本跟随源目录，天然保持一致，不参与比对。
+/// 每个技能先收集各副本的内容摘要与文件树，再在拥有两份及以上副本时对比：
+/// 内容指 SKILL.md（单文件技能则为整个文件），文件树指其余文件的相对路径集合。
+pub(crate) fn scan_scope_skill_differences(
+    app: &AppHandle,
+    state: &AppState,
+    scope: &ScopeSelection,
+) -> CommandResult<SkillDiffResult> {
+    let source_skills = scope_skills_path(state, scope)?;
+    let source_base = source_skills
+        .parent()
+        .unwrap_or(&source_skills)
+        .to_path_buf();
+    let target_bases = publish_target_base_paths(app, state, scope)?;
+    compare_skill_copies(&source_base, &source_skills, &target_bases)
+}
+
+/// 以源目录为基准，对比各目标基础目录中同名技能的物理副本。
+fn compare_skill_copies(
+    source_base: &Path,
+    source_skills: &Path,
+    target_bases: &[PathBuf],
+) -> CommandResult<SkillDiffResult> {
+    // 源目录本身也作为一份参与对比，保证只发布到部分目标时仍能发现差异。
+    // 源可能同时是某个发布目标的目录（例如全局源就是 .agents），所以插入后
+    // 需要重新去重，避免同一位置被算成两份副本。
+    let mut bases: Vec<PathBuf> = Vec::with_capacity(target_bases.len() + 1);
+    bases.push(source_base.to_path_buf());
+    bases.extend(target_bases.iter().cloned());
+    bases.sort_by_key(|path| path_to_string(path).to_lowercase());
+    bases.dedup_by(|left, right| paths_match_without_following_final_symlink(left, right));
+
+    let mut entries = Vec::new();
+    for name in skill_names_in(source_skills)? {
+        let mut digests: Vec<SkillCopyDigest> = Vec::new();
+        for base in &bases {
+            if let Some(digest) = skill_copy_digest(base, &name)? {
+                digests.push(digest);
+            }
+        }
+
+        // 至少两份副本才谈得上"不同步"；单独一份没有可比对象。
+        if digests.len() < 2 {
+            continue;
+        }
+
+        let mut content_differs = false;
+        let mut tree_differs = false;
+        for pair in digests.windows(2) {
+            if pair[0].content != pair[1].content {
+                content_differs = true;
+            }
+            if pair[0].tree != pair[1].tree {
+                tree_differs = true;
+            }
+        }
+        if content_differs || tree_differs {
+            entries.push(SkillDiffEntry {
+                skill_name: name,
+                content_differs,
+                tree_differs,
+                copy_count: digests.len(),
+            });
+        }
+    }
+
+    entries.sort_by(|left, right| left.skill_name.cmp(&right.skill_name));
+    Ok(SkillDiffResult { entries })
+}
+
+struct SkillCopyDigest {
+    content: Vec<u8>,
+    tree: BTreeMap<String, u64>,
+}
+
+/// 读取一份技能副本的比对材料：内容主文件字节 + 其余文件树（相对路径 -> 大小）。
+/// 符号链接副本返回 None（链接跟随源，不需要比对）；源位置本身始终返回 Some。
+fn skill_copy_digest(base: &Path, skill_name: &str) -> CommandResult<Option<SkillCopyDigest>> {
+    let skill_path = base.join(SKILLS_FOLDER_NAME).join(skill_name);
+    let Ok(metadata) = fs::symlink_metadata(&skill_path) else {
+        return Ok(None);
+    };
+    if metadata.file_type().is_symlink() {
+        return Ok(None);
+    }
+
+    if metadata.is_file() {
+        return Ok(Some(SkillCopyDigest {
+            content: fs::read(&skill_path).map_err(readable_io_error)?,
+            tree: BTreeMap::new(),
+        }));
+    }
+    if !metadata.is_dir() {
+        return Ok(None);
+    }
+
+    let main_file = skill_path.join(SKILL_MAIN_FILE);
+    let content = if main_file.is_file() {
+        fs::read(&main_file).map_err(readable_io_error)?
+    } else {
+        Vec::new()
+    };
+
+    let mut tree = BTreeMap::new();
+    collect_tree_entries(&skill_path, &skill_path, &mut tree)?;
+    Ok(Some(SkillCopyDigest { content, tree }))
+}
+
+/// 递归记录相对路径与文件大小；跳过符号链接，避免把链接目标误当成树结构。
+fn collect_tree_entries(
+    root: &Path,
+    dir: &Path,
+    tree: &mut BTreeMap<String, u64>,
+) -> CommandResult<()> {
+    for entry in fs::read_dir(dir).map_err(readable_io_error)? {
+        let entry = entry.map_err(readable_io_error)?;
+        let entry_path = entry.path();
+        let metadata = fs::symlink_metadata(&entry_path).map_err(readable_io_error)?;
+        if metadata.file_type().is_symlink() {
+            continue;
+        }
+        let relative = entry_path
+            .strip_prefix(root)
+            .map(|path| path.to_string_lossy().replace('\\', "/"))
+            .unwrap_or_default();
+        if metadata.is_dir() {
+            collect_tree_entries(root, &entry_path, tree)?;
+        } else {
+            tree.insert(relative, metadata.len());
+        }
+    }
+    Ok(())
+}
+
+/// 当前范围内技能名的并集：源目录加上所有目标目录中出现的名字。
+fn skill_names_in(source_skills: &Path) -> CommandResult<Vec<String>> {
+    let mut names = Vec::new();
+    if source_skills.is_dir() {
+        for entry in fs::read_dir(source_skills).map_err(readable_io_error)? {
+            let entry = entry.map_err(readable_io_error)?;
+            names.push(entry.file_name().to_string_lossy().to_string());
+        }
+    }
+    names.sort_by_key(|name| name.to_lowercase());
+    names.dedup();
+    Ok(names)
 }
 
 pub(crate) fn publish_scope_folder(
@@ -513,8 +665,8 @@ fn symlink_error(error: std::io::Error) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        delete_skill_from_target_bases, paths_match_without_following_final_symlink, publish_path,
-        scan_scope_skills,
+        compare_skill_copies, delete_skill_from_target_bases,
+        paths_match_without_following_final_symlink, publish_path, scan_scope_skills,
     };
     use crate::{
         filesystem::{
@@ -901,6 +1053,131 @@ mod tests {
             paths_match_without_following_final_symlink(&source_skill, &source_skill),
             "the literal source path remains protected"
         );
+
+        fs::remove_dir_all(root).expect("test temp directory should be removed");
+    }
+
+    #[test]
+    fn diff_scan_reports_content_and_tree_differences_between_copies() {
+        let root = temp_root("diff-scan");
+        let source_base = root.join("source").join(".claude");
+        let source_skills = source_base.join("skills");
+        let demo = source_skills.join("demo");
+        fs::create_dir_all(&demo).expect("source skill directory should be created");
+        fs::write(demo.join("SKILL.md"), "version a").expect("source SKILL.md should be written");
+        fs::write(demo.join("extra.txt"), "extra").expect("source extra file should be written");
+
+        // 副本一：内容不同
+        let copy_a_base = root.join("target").join(".codex");
+        let copy_a = copy_a_base.join("skills").join("demo");
+        fs::create_dir_all(&copy_a).expect("copy a should be created");
+        fs::write(copy_a.join("SKILL.md"), "version b").expect("copy a SKILL.md should be written");
+        fs::write(copy_a.join("extra.txt"), "extra").expect("copy a extra file should be written");
+
+        // 副本二：内容相同但文件树缺少 extra.txt
+        let copy_b_base = root.join("target").join(".gemini");
+        let copy_b = copy_b_base.join("skills").join("demo");
+        fs::create_dir_all(&copy_b).expect("copy b should be created");
+        fs::write(copy_b.join("SKILL.md"), "version a").expect("copy b SKILL.md should be written");
+
+        // 单副本技能：没有可比对象，不应出现在结果里。
+        let solo_base = root.join("target").join(".qoder");
+        let solo = solo_base.join("skills").join("demo");
+        fs::create_dir_all(&solo).expect("solo copy should be created");
+        fs::write(solo.join("SKILL.md"), "unique").expect("solo SKILL.md should be written");
+
+        let mut state = state_for_global(&source_base);
+        state.target_base_folders =
+            vec![path_to_string(&copy_a_base), path_to_string(&copy_b_base)];
+        let target_bases: Vec<PathBuf> = state
+            .target_base_folders
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+
+        let result = compare_skill_copies(&source_base, &source_skills, &target_bases)
+            .expect("diff scan should succeed");
+
+        assert_eq!(result.entries.len(), 1, "only multi-copy skills are compared");
+        let entry = &result.entries[0];
+        assert_eq!(entry.skill_name, "demo");
+        assert!(entry.content_differs, "SKILL.md mismatch should be reported");
+        assert!(entry.tree_differs, "missing extra.txt should be reported");
+        assert_eq!(entry.copy_count, 3, "source plus two copies take part");
+
+        fs::remove_dir_all(root).expect("test temp directory should be removed");
+    }
+
+    #[test]
+    fn diff_scan_does_not_double_count_when_source_is_also_a_target() {
+        // 全局源目录常常同时是某个发布目标的目录（例如 .agents），
+        // 此时它只能算一份副本，而不是两份。
+        let root = temp_root("diff-scan-duplicate");
+        let source_base = root.join("target").join(".agents");
+        let source_skills = source_base.join("skills");
+        let demo = source_skills.join("demo");
+        fs::create_dir_all(&demo).expect("source skill directory should be created");
+        fs::write(demo.join("SKILL.md"), "version a").expect("source SKILL.md should be written");
+
+        let copy_base = root.join("target").join(".claude");
+        let copy = copy_base.join("skills").join("demo");
+        fs::create_dir_all(&copy).expect("copy should be created");
+        fs::write(copy.join("SKILL.md"), "version b").expect("copy SKILL.md should be written");
+
+        let target_bases = vec![source_base.clone(), copy_base.clone()];
+        let result = compare_skill_copies(&source_base, &source_skills, &target_bases)
+            .expect("diff scan should succeed");
+
+        assert_eq!(result.entries.len(), 1, "the mismatch should be flagged");
+        assert_eq!(
+            result.entries[0].copy_count, 2,
+            "the duplicated source location should be counted once"
+        );
+
+        fs::remove_dir_all(root).expect("test temp directory should be removed");
+    }
+
+    #[test]
+    fn diff_scan_ignores_symlink_copies_and_identical_sets() {
+        let root = temp_root("diff-scan-symlink");
+        let source_base = root.join("source").join(".claude");
+        let source_skills = source_base.join("skills");
+        let demo = source_skills.join("demo");
+        fs::create_dir_all(&demo).expect("source skill directory should be created");
+        fs::write(demo.join("SKILL.md"), "same").expect("source SKILL.md should be written");
+
+        // 符号链接副本跟随源目录，天然一致，不应触发差异。
+        let link_base = root.join("target").join(".codex");
+        let link_skills = link_base.join("skills");
+        fs::create_dir_all(&link_skills).expect("link base should be created");
+        let has_link = create_test_dir_symlink(&demo, &link_skills.join("demo")).is_ok();
+
+        // 一份内容一致的物理副本。
+        let copy_base = root.join("target").join(".gemini");
+        let copy = copy_base.join("skills").join("demo");
+        fs::create_dir_all(&copy).expect("physical copy should be created");
+        fs::write(copy.join("SKILL.md"), "same").expect("copy SKILL.md should be written");
+
+        let mut state = state_for_global(&source_base);
+        state.target_base_folders =
+            vec![path_to_string(&link_base), path_to_string(&copy_base)];
+        let target_bases: Vec<PathBuf> = state
+            .target_base_folders
+            .iter()
+            .map(PathBuf::from)
+            .collect();
+
+        let result = compare_skill_copies(&source_base, &source_skills, &target_bases)
+            .expect("diff scan should succeed");
+
+        if has_link {
+            assert!(
+                result.entries.is_empty(),
+                "identical copies and symlinks should not be flagged"
+            );
+        } else {
+            assert_eq!(result.entries.len(), 0, "no differences exist");
+        }
 
         fs::remove_dir_all(root).expect("test temp directory should be removed");
     }

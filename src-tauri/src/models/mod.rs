@@ -94,6 +94,23 @@ pub(crate) struct TargetScanResult {
     pub(crate) targets: Vec<PublishTargetStatus>,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SkillDiffEntry {
+    pub(crate) skill_name: String,
+    /// SKILL.md 内容（单文件技能则为整个文件内容）在多份副本间不一致。
+    pub(crate) content_differs: bool,
+    /// 副本之间的文件树结构（相对路径集合）不一致。
+    pub(crate) tree_differs: bool,
+    pub(crate) copy_count: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct SkillDiffResult {
+    pub(crate) entries: Vec<SkillDiffEntry>,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PublishFolderRequest {
