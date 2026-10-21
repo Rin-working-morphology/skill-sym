@@ -75,7 +75,7 @@ jobs:
     steps:
       - name: Install Arch Linux dependencies
         run: |
-          pacman -Syu --noconfirm git github-cli rust bun jq webkit2gtk-4.1 librsvg patchelf
+          pacman -Syu --noconfirm git github-cli rust bun jq webkit2gtk-4.1 librsvg patchelf xdg-utils
 
       - uses: actions/checkout@v4
 
