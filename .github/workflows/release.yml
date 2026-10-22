@@ -83,6 +83,12 @@ jobs:
 
       - uses: actions/checkout@v4
 
+      # 作业跑在容器里（root），而 /__w 是从宿主机挂载的、属主是 runner 用户，
+      # git 会判定 "dubious ownership" 而拒绝执行；checkout 只在临时 HOME 里写入
+      # safe.directory，不会留到后续步骤，因此这里补写一份到 /github/home 的全局配置。
+      - name: Mark workspace as a safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Install frontend dependencies
         run: bun install
 
