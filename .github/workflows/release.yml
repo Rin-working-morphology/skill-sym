@@ -87,7 +87,13 @@ jobs:
         run: bun install
 
       - name: Build AppImage
-        run: bun run tauri build --bundles appimage
+        run: |
+          # linuxdeploy 的 gtk 插件会原样拷贝 pkgconf gdk_pixbuf_binarydir 指向的目录，
+          # 而 /usr/lib/gdk-pixbuf-2.0/2.10.0 只由安装 pixbuf loader 的包（桌面环境里通常是
+          # libopenraw 之类）创建；裸 base-devel 容器里没有任何包创建它，插件在 set -e 下
+          # cp 空路径即失败，对外只表现为 Tauri 报 "failed to run linuxdeploy"。
+          mkdir -p /usr/lib/gdk-pixbuf-2.0/2.10.0
+          bun run tauri build --bundles appimage
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
